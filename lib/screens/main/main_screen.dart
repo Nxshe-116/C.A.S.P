@@ -13,9 +13,17 @@ import 'package:provider/provider.dart';
 import '../../components/side_menu.dart';
 
 class MainScreen extends StatefulWidget {
+
+  final String uid;
+
+  const MainScreen({super.key, required this.uid});
+  
   @override
   _MainScreenState createState() => _MainScreenState();
 }
+
+
+
 
 class _MainScreenState extends State<MainScreen> {
   // Track the current index to switch between different screens
