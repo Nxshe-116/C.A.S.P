@@ -86,93 +86,49 @@ class _SignInScreenState extends State<SignInScreen> {
                   // Display the currently selected page
                   child: Container(
                     color: bgColor,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 10.0),
-                          child: Image.asset(
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Image.asset(
                             "assets/images/12.png",
-                            height: 200,
+                            height: 190,
                           ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Welcome",
-                                style: TextStyle(
-                                    color: secondaryColor,
-                                    fontSize: 27,
-                                    fontWeight: FontWeight.w800)),
-                            Text("Enter your credentials to continue ",
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.normal)),
-                          ],
-                        ),
-                        CustomTextField(
-                            controller: controller,
-                            hintText: "Email",
-                            leadingIcon: Icons.person),
-                        SizedBox(height: 15),
-                        CustomPasswordField(
-                            controller: passwordController,
-                            hintText: "Password",
-                            leadingIcon: Icons.lock),
-                      ],
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Welcome",
+                                  style: TextStyle(
+                                      color: secondaryColor,
+                                      fontSize: 35,
+                                      fontWeight: FontWeight.w900)),
+                              Text("Enter your credentials to continue ",
+                                  style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.normal)),
+                            ],
+                          ),
+                          SizedBox(height: 25),
+                          CustomTextField(
+                              controller: controller,
+                              hintText: "Email",
+                              leadingIcon: Icons.person),
+                          SizedBox(height: 15),
+                          CustomPasswordField(
+                              controller: passwordController,
+                              hintText: "Password",
+                              leadingIcon: Icons.lock),
+                          CustomButton(title: "Sign In"),
+                        ],
+                      ),
                     ),
                   )),
             ],
           ),
         ]),
       ),
-      // body: Padding(
-      //   padding: const EdgeInsets.all(16.0),
-      //   child: Form(
-      //     key: _formKey,
-      //     child: Column(
-      //       children: [
-      //         TextFormField(
-      //           controller: _emailController,
-      //           decoration: InputDecoration(labelText: 'Email'),
-      //           validator: (value) {
-      //             if (value == null || value.isEmpty) {
-      //               return 'Please enter your email';
-      //             }
-      //             return null;
-      //           },
-      //         ),
-      //         TextFormField(
-      //           controller: _passwordController,
-      //           decoration: InputDecoration(labelText: 'Password'),
-      //           obscureText: true,
-      //           validator: (value) {
-      //             if (value == null || value.isEmpty) {
-      //               return 'Please enter your password';
-      //             }
-      //             return null;
-      //           },
-      //         ),
-      //         SizedBox(height: 20),
-      //         ElevatedButton(
-      //           onPressed: _signIn,
-      //           child: Text('Sign In'),
-      //         ),
-      //         TextButton(
-      //           onPressed: () {
-      //             // Navigate to the registration screen
-      //             Navigator.push(
-      //               context,
-      //               MaterialPageRoute(builder: (context) => RegistrationScreen()),
-      //             );
-      //           },
-      //           child: Text('Don\'t have an account? Register here'),
-      //         ),
-      //       ],
-      //     ),
-      //   ),
-      // ),
     );
   }
 }

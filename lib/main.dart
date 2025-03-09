@@ -7,9 +7,23 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter is initialized
-    await Firebase.initializeApp();
+
+  try {
+    // Initialize Firebase with your project's configuration
+    await Firebase.initializeApp(
+        options: FirebaseOptions(
+            apiKey: "AIzaSyDkT9IzoZLoTIyxwJw__KHarEVRMI_Xmzw",
+            authDomain: "casp-20117.firebaseapp.com",
+            projectId: "casp-20117",
+            storageBucket: "casp-20117.firebasestorage.app",
+            messagingSenderId: "511015749458",
+            appId: "1:511015749458:web:680ca3cde836fcbf831c8b"));
+  } catch (e) {
+    print("Error initializing Firebase: $e");
+  }
+
   // Run the app
   runApp(MyApp());
 }
