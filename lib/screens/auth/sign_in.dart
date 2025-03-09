@@ -1,9 +1,11 @@
 import 'package:admin/constants.dart';
 import 'package:admin/responsive.dart';
+import 'package:admin/screens/auth/components/components.dart';
 import 'package:admin/screens/auth/reg.dart';
 import 'package:admin/screens/main/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class SignInScreen extends StatefulWidget {
   @override
@@ -11,15 +13,15 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final TextEditingController controller = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  Future<void> _signIn() async {
+  Future<void> signIn() async {
     if (_formKey.currentState!.validate()) {
       try {
-        final email = _emailController.text.trim();
-        final password = _passwordController.text.trim();
+        final email = controller.text.trim();
+        final password = passwordController.text.trim();
 
         // Sign in with Firebase Authentication
         final userCredential =
@@ -67,22 +69,59 @@ class _SignInScreenState extends State<SignInScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              
               if (Responsive.isDesktop(context))
                 Expanded(
                   flex: 4,
                   child: Center(
-                    child: Image.asset(
-                      "assets/images/12.png",
-                      height: 450,
-                    ),
-                  ),
+                      child: Text(
+                    'Smarter Agriculture, \nSmarter Investments.',
+                    style: TextStyle(
+                        fontSize: 55,
+                        fontWeight: FontWeight.bold,
+                        color: bgColor),
+                  )),
                 ),
               Expanded(
                   flex: 2,
                   // Display the currently selected page
                   child: Container(
-                    color: primaryColor,
+                    color: bgColor,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10.0),
+                          child: Image.asset(
+                            "assets/images/12.png",
+                            height: 200,
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Welcome",
+                                style: TextStyle(
+                                    color: secondaryColor,
+                                    fontSize: 27,
+                                    fontWeight: FontWeight.w800)),
+                            Text("Enter your credentials to continue ",
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.normal)),
+                          ],
+                        ),
+                        CustomTextField(
+                            controller: controller,
+                            hintText: "Email",
+                            leadingIcon: Icons.person),
+                        SizedBox(height: 15),
+                        CustomPasswordField(
+                            controller: passwordController,
+                            hintText: "Password",
+                            leadingIcon: Icons.lock),
+                      ],
+                    ),
                   )),
             ],
           ),

@@ -1,12 +1,16 @@
 import 'package:admin/constants.dart';
 import 'package:admin/controllers/menu_app_controller.dart';
 import 'package:admin/screens/auth/sign_in.dart';
- 
+import 'package:firebase_core/firebase_core.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter is initialized
+    await Firebase.initializeApp();
+  // Run the app
   runApp(MyApp());
 }
 

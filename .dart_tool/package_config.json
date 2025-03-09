@@ -146,6 +146,12 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "flutter_screenutil",
+      "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/flutter_screenutil-5.9.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
       "name": "flutter_svg",
       "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/flutter_svg-2.0.10+1",
       "packageUri": "lib/",
@@ -416,7 +422,7 @@
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2025-03-09T20:42:32.982093Z",
+  "generated": "2025-03-09T21:38:42.853600Z",
   "generator": "pub",
   "generatorVersion": "3.6.0",
   "flutterRoot": "file:///Users/nashechagumaira/development/flutter",
