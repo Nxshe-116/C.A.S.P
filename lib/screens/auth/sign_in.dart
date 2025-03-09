@@ -1,11 +1,9 @@
 import 'package:admin/constants.dart';
 import 'package:admin/responsive.dart';
 import 'package:admin/screens/auth/components/components.dart';
-import 'package:admin/screens/auth/reg.dart';
 import 'package:admin/screens/main/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class SignInScreen extends StatefulWidget {
   @override
@@ -120,7 +118,7 @@ class _SignInScreenState extends State<SignInScreen> {
                               controller: passwordController,
                               hintText: "Password",
                               leadingIcon: Icons.lock),
-                          CustomButton(title: "Sign In"),
+                          CustomButton(title: "Sign In",onTap: signIn,),
                         ],
                       ),
                     ),

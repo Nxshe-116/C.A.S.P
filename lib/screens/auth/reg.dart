@@ -1,4 +1,7 @@
-import 'package:admin/screens/auth/sign_in.dart';
+import 'package:admin/constants.dart';
+import 'package:admin/responsive.dart';
+import 'package:admin/screens/auth/components/components.dart';
+// import 'package:admin/screens/auth/sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,38 +12,36 @@ class RegistrationScreen extends StatefulWidget {
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
 
   Future<void> _register() async {
-    if (_formKey.currentState!.validate()) {
+    if (formKey.currentState!.validate()) {
       try {
-        final firstName = _firstNameController.text.trim();
-        final lastName = _lastNameController.text.trim();
-        final email = _emailController.text.trim();
-        final password = _passwordController.text.trim();
+        final firstName = firstNameController.text.trim();
+        final lastName = lastNameController.text.trim();
+        final email = emailController.text.trim();
+        final password = passwordController.text.trim();
 
         // Create user with Firebase Authentication
-        final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        final userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: email,
           password: password,
         );
 
         // Save user details to Firestore
         final userId = userCredential.user!.uid;
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .set({
-              'userId': userId,
-              'firstName': firstName,
-              'lastName': lastName,
-              'email': email,
-              'selectedCompanies': [], // Initialize with an empty list
-            });
+        await FirebaseFirestore.instance.collection('users').doc(userId).set({
+          'userId': userId,
+          'firstName': firstName,
+          'lastName': lastName,
+          'email': email,
+          'selectedCompanies': [], // Initialize with an empty list
+        });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Registration successful!')),
@@ -73,72 +74,86 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Register')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
+      backgroundColor: bgColor,
+      body: SafeArea(
+        child: Stack(children: [
+          Image.asset(
+            "assets/images/agric.jpg",
+            fit: BoxFit.contain,
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextFormField(
-                controller: _firstNameController,
-                decoration: InputDecoration(labelText: 'First Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your first name';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _lastNameController,
-                decoration: InputDecoration(labelText: 'Last Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your last name';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(labelText: 'Email'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(labelText: 'Password'),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _register,
-                child: Text('Register'),
-              ),
-              TextButton(
-                onPressed: () {
-                  // Navigate to the sign-in screen
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => SignInScreen()),
-                  );
-                },
-                child: Text('Already have an account? Sign in here'),
+              if (Responsive.isDesktop(context))
+                Expanded(
+                    flex: 2,
+                    // Display the currently selected page
+                    child: Container(
+                      color: bgColor,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Image.asset(
+                              "assets/images/12.png",
+                              height: 190,
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Welcome",
+                                    style: TextStyle(
+                                        color: secondaryColor,
+                                        fontSize: 35,
+                                        fontWeight: FontWeight.w900)),
+                                Text("Enter your credentials to continue ",
+                                    style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.normal)),
+                              ],
+                            ),
+                            SizedBox(height: 25),
+                            CustomTextField(
+                                controller: firstNameController,
+                                hintText: "First name",
+                                leadingIcon: Icons.person),
+                            CustomTextField(
+                                controller: lastNameController,
+                                hintText: "Last name",
+                                leadingIcon: Icons.person),
+                            CustomTextField(
+                                controller: emailController,
+                                hintText: "Email",
+                                leadingIcon: Icons.mail_outline_outlined),
+                            SizedBox(height: 15),
+                            CustomPasswordField(
+                                controller: passwordController,
+                                hintText: "Password",
+                                leadingIcon: Icons.lock),
+                            CustomButton(
+                              title: "Sign In",
+                              onTap: _register,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )),
+              Expanded(
+                flex: 4,
+                child: Center(
+                    child: Text(
+                  'AI-Powered Insights \n for Agricultural Markets.',
+                  style: TextStyle(
+                      fontSize: 55,
+                      fontWeight: FontWeight.bold,
+                      color: bgColor),
+                )),
               ),
             ],
           ),
-        ),
+        ]),
       ),
     );
   }

@@ -2,10 +2,6 @@ import 'package:admin/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-
-
-
-
 class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
@@ -58,9 +54,6 @@ class CustomTextField extends StatelessWidget {
   }
 }
 
-
-
-
 class CustomPasswordField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
@@ -106,8 +99,7 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
           //     });
           //   },
           // ),
-        
-        
+
           hintText: widget.hintText,
           hintStyle: TextStyle(color: Colors.grey),
           border: OutlineInputBorder(
@@ -119,14 +111,14 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
           ),
           focusedBorder: OutlineInputBorder(
             borderSide: BorderSide(
-              color:secondaryColor,
+              color: secondaryColor,
               width: 2.0,
             ),
             borderRadius: BorderRadius.circular(10.0),
           ),
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(
-              color:secondaryColor,
+              color: secondaryColor,
               width: 2.0,
             ),
             borderRadius: BorderRadius.circular(10.0),
@@ -139,16 +131,17 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
 
 class CustomButton extends StatelessWidget {
   final String title;
-
+  final VoidCallback onTap;
   const CustomButton({
     super.key,
     required this.title,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           border: Border.all(
