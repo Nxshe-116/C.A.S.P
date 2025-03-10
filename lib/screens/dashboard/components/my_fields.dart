@@ -1,14 +1,30 @@
+import 'package:admin/models/company.dart';
 import 'package:admin/models/my_files.dart';
 import 'package:admin/responsive.dart';
+import 'package:admin/services/services.dart';
 import 'package:flutter/material.dart';
 
 import '../../../constants.dart';
 import 'file_info_card.dart';
 
-class MyFiles extends StatelessWidget {
+class MyFiles extends StatefulWidget {
   const MyFiles({
     Key? key,
   }) : super(key: key);
+
+  @override
+  State<MyFiles> createState() => _MyFilesState();
+}
+
+class _MyFilesState extends State<MyFiles> {
+  final ApiService _apiService = ApiService();
+  late Future<List<Company>> futureCompanies;
+
+  @override
+  void initState() {
+    super.initState();
+    futureCompanies = _apiService.fetchCompanies();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +51,7 @@ class MyFiles extends StatelessWidget {
                       BorderRadius.circular(6.0), // Slightly rounded corners
                 ),
               ),
-              onPressed: () => showDataDialog(context),
+              onPressed: () => showDataDialog(context, futureCompanies),
               icon: Icon(
                 Icons.add,
                 color: Colors.white,
@@ -91,9 +107,78 @@ class FileInfoCardGridView extends StatelessWidget {
   }
 }
 
+// void showDataDialog(
+//     BuildContext context, Future<List<Company>> futureCompanies) {
+//   showDialog(
+//     context: context,
+//     builder: (BuildContext context) {
+//       return AlertDialog(
+//         backgroundColor: Colors.white,
+//         shape: RoundedRectangleBorder(
+//           borderRadius: BorderRadius.circular(12),
+//         ),
+//         contentPadding: EdgeInsets.zero,
+//         content: Container(
+//           height: 1500,
+//           width: 2000,
+//           child: Padding(
+//             padding: const EdgeInsets.all(30.0),
+//             child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 Text(
+//                   'Companies',
+//                   style: Theme.of(context).textTheme.headlineLarge,
+//                 ),
+//               FutureBuilder<List<Company>>(
+//   future: futureCompanies,
+//   builder: (context, snapshot) {
+//     if (snapshot.connectionState == ConnectionState.waiting) {
+//       return Center(child: CircularProgressIndicator());
+//     } else if (snapshot.hasError) {
+//       return Center(child: Text('Error: ${snapshot.error}'));
+//     } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+//       return Center(child: Text('No companies found'));
+//     } else {
+//       final companies = snapshot.data!;
+//       return SizedBox(
+//         height: 300, // Set a fixed height
+//         child: ListView.builder(
+//           itemCount: companies.length,
+//           itemBuilder: (context, index) {
+//             final company = companies[index];
+//             return ListTile(
+//               title: Text(company.name),
+//               subtitle: Text('Symbol: ${company.symbol}'),
+//             );
+//           },
+//         ),
+//       );
+//     }
+//   },
+// )
+
+//               ],
+//             ),
+//           ),
+//         ),
+//         actions: [
+//           TextButton(
+//             onPressed: () {
+//               Navigator.of(context).pop(); // Close the dialog
+//             },
+//             child: Text(
+//               'Close',
+//               style: TextStyle(color: primaryColor),
+//             ),
+//           ),
+//         ],
+//       );
+//     },
+//   );
+// }
 void showDataDialog(
-  BuildContext context,
-) {
+    BuildContext context, Future<List<Company>> futureCompanies) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -104,8 +189,8 @@ void showDataDialog(
         ),
         contentPadding: EdgeInsets.zero,
         content: Container(
-          height: 1500,
-          width: 2000,
+          height: 500, // Set a fixed height
+          width: 500, // Set a fixed width
           child: Padding(
             padding: const EdgeInsets.all(30.0),
             child: Column(
@@ -114,6 +199,33 @@ void showDataDialog(
                 Text(
                   'Companies',
                   style: Theme.of(context).textTheme.headlineLarge,
+                ),
+                Expanded(
+                  // Use Expanded to give ListView a bounded height
+                  child: FutureBuilder<List<Company>>(
+                    future: futureCompanies,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Center(child: Text('No companies found'));
+                      } else {
+                        final companies = snapshot.data!;
+                        return ListView.builder(
+                          itemCount: companies.length,
+                          itemBuilder: (context, index) {
+                            final company = companies[index];
+                            return ListTile(
+                              title: Text(company.name),
+                              subtitle: Text('Symbol: ${company.symbol}'),
+                            );
+                          },
+                        );
+                      }
+                    },
+                  ),
                 ),
               ],
             ),

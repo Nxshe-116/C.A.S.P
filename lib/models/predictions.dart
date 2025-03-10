@@ -95,4 +95,64 @@ class FuturePredictionsResponse {
       ),
     );
   }
+
+
+
+
+  
 }
+
+class Prediction {
+  final String symbol;
+  final double predictedClose;
+  final String timestamp;
+
+  Prediction({
+    required this.symbol,
+    required this.predictedClose,
+    required this.timestamp,
+  });
+
+  factory Prediction.fromJson(Map<String, dynamic> json) {
+    return Prediction(
+      symbol: json['symbol'],
+      predictedClose: json['predicted_close'].toDouble(),
+      timestamp: json['timestamp'],
+    );
+  }
+}
+
+
+
+
+class PredictionWithClimate {
+  final String symbol;
+  final double predictedClose;
+  final String timestamp;
+  final Map<String, dynamic> climateData;
+
+  PredictionWithClimate({
+    required this.symbol,
+    required this.predictedClose,
+    required this.timestamp,
+    required this.climateData,
+  });
+
+  factory PredictionWithClimate.fromJson(Map<String, dynamic> json) {
+    return PredictionWithClimate(
+      symbol: json['symbol'],
+      predictedClose: json['predicted_close'].toDouble(),
+      timestamp: json['timestamp'],
+      climateData: json['climate_data'],
+    );
+  }
+
+
+
+
+  
+}
+
+
+
+ 
