@@ -74,7 +74,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: Color(0xFFF4FAFF),
       body: SafeArea(
         child: Stack(children: [
           Image.asset(
@@ -99,7 +99,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 Expanded(
                     flex: 2,
                     child: Container(
-                      color: bgColor,
+                      color: Color(0xFFF4FAFF),
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Column(

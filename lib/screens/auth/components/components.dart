@@ -52,6 +52,8 @@ class CustomTextField extends StatelessWidget {
             borderRadius: BorderRadius.circular(10.0),
           ),
         ),
+
+        onChanged: null,
       ),
     );
   }
@@ -130,6 +132,8 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
             borderRadius: BorderRadius.circular(10.0),
           ),
         ),
+
+         onChanged: null,
       ),
     );
   }

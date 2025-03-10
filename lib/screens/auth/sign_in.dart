@@ -68,7 +68,7 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: Color(0xFFF4FAFF),
       body: SafeArea(
         child: Stack(children: [
           Image.asset(
@@ -94,7 +94,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   flex: 2,
                   // Display the currently selected page
                   child: Container(
-                    color: bgColor,
+                    color: Color(0xFFF4FAFF),
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
                       child: Column(
