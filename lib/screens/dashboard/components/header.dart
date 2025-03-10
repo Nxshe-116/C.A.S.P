@@ -10,9 +10,13 @@ import '../../../constants.dart';
 
 class Header extends StatelessWidget {
   final String text;
+  final String name;
+  final String lastName;
   const Header({
     Key? key,
     required this.text,
+    required this.name,
+    required this.lastName,
   }) : super(key: key);
 
   @override
@@ -32,15 +36,22 @@ class Header extends StatelessWidget {
         if (!Responsive.isMobile(context))
           Spacer(flex: Responsive.isDesktop(context) ? 2 : 1),
         Expanded(child: SearchField()),
-        ProfileCard()
+        ProfileCard(
+          lastName: lastName,
+          name: name,
+        )
       ],
     );
   }
 }
 
 class ProfileCard extends StatelessWidget {
+  final String name;
+  final String lastName;
   const ProfileCard({
     Key? key,
+    required this.name,
+    required this.lastName,
   }) : super(key: key);
 
   @override
@@ -58,6 +69,7 @@ class ProfileCard extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Profile Icon
           ClipOval(
             child: Container(
               color: Colors.grey[300], // Background color for the circle
@@ -71,16 +83,101 @@ class ProfileCard extends StatelessWidget {
               ),
             ),
           ),
+
+          // Display the username if not on mobile
           if (!Responsive.isMobile(context))
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: defaultPadding / 2),
-              child: Text("Nashe Chagumaira"),
+              child: Text("${name} ${lastName}"),
             ),
-          Icon(Icons.keyboard_arrow_down),
+
+          // Dropdown Menu
+          PopupMenuButton<String>(
+            icon: Icon(Icons.keyboard_arrow_down), // Dropdown icon
+            color: Colors
+                .white, // Set the background color of the dropdown to white
+            shape: RoundedRectangleBorder(
+              borderRadius:
+                  BorderRadius.circular(10), // Rounded corners for the dropdown
+            ),
+            offset: Offset(0,
+                40), // Adjust the offset to position the dropdown below the arrow
+            onSelected: (String value) {
+              // Handle menu item selection
+              if (value == 'profile') {
+                _navigateToProfile(context);
+              } else if (value == 'settings') {
+                _navigateToSettings(context);
+              } else if (value == 'logout') {
+                _logout(context);
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                // Profile Option
+                PopupMenuItem<String>(
+                  value: 'profile',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person, color: Colors.black), // Profile icon
+                      SizedBox(width: 10), // Spacing between icon and text
+                      Text('Profile', style: TextStyle(color: Colors.black)),
+                    ],
+                  ),
+                ),
+
+                // Settings Option
+                PopupMenuItem<String>(
+                  value: 'settings',
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings,
+                          color: Colors.black), // Settings icon
+                      SizedBox(width: 10), // Spacing between icon and text
+                      Text('Settings', style: TextStyle(color: Colors.black)),
+                    ],
+                  ),
+                ),
+
+                // Logout Option
+                PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: Colors.black), // Logout icon
+                      SizedBox(width: 10), // Spacing between icon and text
+                      Text('Logout', style: TextStyle(color: Colors.black)),
+                    ],
+                  ),
+                ),
+              ];
+            },
+          ),
         ],
       ),
     );
+  }
+
+  // Navigate to Profile
+  void _navigateToProfile(BuildContext context) {
+    print("Navigate to Profile");
+    // Example: Navigate to the profile screen
+    // Navigator.pushNamed(context, '/profile');
+  }
+
+  // Navigate to Settings
+  void _navigateToSettings(BuildContext context) {
+    print("Navigate to Settings");
+    // Example: Navigate to the settings screen
+    // Navigator.pushNamed(context, '/settings');
+  }
+
+  // Logout function
+  void _logout(BuildContext context) {
+    print("User logged out");
+    // Example: Perform logout logic (e.g., clear user session, navigate to login screen)
+    // Navigator.pushReplacementNamed(context, '/login');
   }
 }
 

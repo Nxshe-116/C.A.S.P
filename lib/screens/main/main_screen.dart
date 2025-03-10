@@ -1,5 +1,5 @@
 import 'package:admin/controllers/menu_app_controller.dart';
- 
+
 import 'package:admin/responsive.dart';
 import 'package:admin/screens/dashboard/dashboard_screen.dart';
 import 'package:admin/screens/notif/notification.dart';
@@ -13,30 +13,38 @@ import 'package:provider/provider.dart';
 import '../../components/side_menu.dart';
 
 class MainScreen extends StatefulWidget {
-
   final String uid;
+  final String name;
+  final String lastName;
 
-  const MainScreen({super.key, required this.uid});
-  
+  const MainScreen(
+      {super.key,
+      required this.uid,
+      required this.name,
+      required this.lastName});
+
   @override
   _MainScreenState createState() => _MainScreenState();
 }
-
-
-
 
 class _MainScreenState extends State<MainScreen> {
   // Track the current index to switch between different screens
   int _selectedIndex = 0;
 
   // List of available screens/pages
-  static List<Widget> pages = <Widget>[
-    DashboardScreen(),
-    PortfolioScreen(),
-    InsightScreen(),
-    NotifictionScreen(),
-     ProfileScreen(),
-  ];
+  late List<Widget> pages;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    pages = [
+      DashboardScreen(name: widget.name, lastName: widget.lastName),
+      PortfolioScreen(name: widget.name, lastName: widget.lastName),
+      InsightScreen(name: widget.name, lastName: widget.lastName),
+      NotifictionScreen(name: widget.name, lastName: widget.lastName),
+      ProfileScreen(name: widget.name, lastName: widget.lastName),
+    ];
+  }
 
   void _onMenuItemSelected(int index) {
     setState(() {
@@ -46,8 +54,6 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-
-
     return Scaffold(
       key: context.read<MenuAppController>().scaffoldKey,
       drawer: SideMenu(

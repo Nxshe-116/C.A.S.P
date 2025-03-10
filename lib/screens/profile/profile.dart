@@ -7,10 +7,21 @@ import 'package:admin/screens/profile/setting_toggle.dart';
 import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatelessWidget {
+
   final String userName = "Nashe Chagumaira"; // Example user name
   final String userEmail = "medannashe6@gmail.com"; // Example user email
   final String userProfilePic =
       "assets/images/man.jpg"; // Example profile picture (replace with your own)
+
+
+    final String name;
+  final String lastName;
+
+  const ProfileScreen({
+    Key? key,
+    required this.name,
+    required this.lastName,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +31,7 @@ class ProfileScreen extends StatelessWidget {
         padding: EdgeInsets.all(defaultPadding),
         child: Column(
           children: [
-            Header(text: "Profile"),
+            Header(text: "Profile", name: name, lastName: lastName,),
             SizedBox(height: defaultPadding),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,

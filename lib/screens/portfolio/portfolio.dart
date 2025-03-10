@@ -3,6 +3,16 @@ import 'package:admin/screens/dashboard/components/header.dart';
 import 'package:flutter/material.dart';
 
 class PortfolioScreen extends StatelessWidget {
+
+    final String name;
+  final String lastName;
+
+  const PortfolioScreen({
+    Key? key,
+    required this.name,
+    required this.lastName,
+  }) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
       return SafeArea(
@@ -11,7 +21,7 @@ class PortfolioScreen extends StatelessWidget {
         padding: EdgeInsets.all(defaultPadding),
         child: Column(
           children: [
-            Header(text: "Portfolio"),
+            Header(text: "Portfolio", name: name, lastName: lastName,),
             SizedBox(height: defaultPadding),
             // Row(
             //   crossAxisAlignment: CrossAxisAlignment.start,

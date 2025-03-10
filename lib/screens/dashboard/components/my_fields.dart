@@ -35,7 +35,7 @@ class MyFiles extends StatelessWidget {
                       BorderRadius.circular(6.0), // Slightly rounded corners
                 ),
               ),
-              onPressed: () {},
+              onPressed: () => showDataDialog(context),
               icon: Icon(
                 Icons.add,
                 color: Colors.white,
@@ -89,4 +89,48 @@ class FileInfoCardGridView extends StatelessWidget {
           StockInfoCard(info: demoStockData[index]),
     );
   }
+}
+
+void showDataDialog(
+  BuildContext context,
+) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        contentPadding: EdgeInsets.zero,
+        content: Container(
+          height: 1500,
+          width: 2000,
+          child: Padding(
+            padding: const EdgeInsets.all(30.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Companies',
+                  style: Theme.of(context).textTheme.headlineLarge,
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: Text(
+              'Close',
+              style: TextStyle(color: primaryColor),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 }

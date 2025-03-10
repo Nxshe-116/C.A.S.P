@@ -4,6 +4,15 @@ import 'package:admin/screens/dashboard/components/header.dart';
 import 'package:flutter/material.dart';
 
 class InsightScreen extends StatelessWidget {
+  final String name;
+  final String lastName;
+
+  const InsightScreen({
+    Key? key,
+    required this.name,
+    required this.lastName,
+  }) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -13,7 +22,11 @@ class InsightScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Header(text: "Insight"),
+            Header(
+              text: "Insight",
+              name: name,
+              lastName: lastName,
+            ),
             SizedBox(height: defaultPadding),
             Text(
               'News Around the World',
@@ -189,4 +202,9 @@ class InsightScreen extends StatelessWidget {
       },
     );
   }
+
+
+
+
+
 }

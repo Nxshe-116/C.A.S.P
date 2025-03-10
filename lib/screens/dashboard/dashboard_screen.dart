@@ -10,6 +10,16 @@ import 'components/recent_files.dart';
 import 'components/storage_details.dart';
 
 class DashboardScreen extends StatelessWidget {
+    final String name;
+  final String lastName;
+
+    const DashboardScreen({
+    Key? key,
+    required this.name,
+    required this.lastName,
+  }) : super(key: key);
+
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -18,7 +28,7 @@ class DashboardScreen extends StatelessWidget {
         padding: EdgeInsets.all(defaultPadding),
         child: Column(
           children: [
-            Header(text: "Dashboard"),
+            Header(text: "Dashboard", name: name, lastName: lastName,),
             SizedBox(height: defaultPadding),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,

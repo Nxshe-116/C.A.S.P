@@ -6,6 +6,7 @@ import 'package:admin/screens/main/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignInScreen extends StatefulWidget {
   @override
@@ -39,11 +40,19 @@ class _SignInScreenState extends State<SignInScreen> {
           password: password,
         );
 
-        // Navigate to the home screen after successful sign-in
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+
+        // change after auth
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-              builder: (context) => MainScreen(uid: userCredential.user!.uid)),
+              builder: (context) => MainScreen(
+                    uid: userCredential.user!.uid,
+                    name: 'Nashe',
+                    lastName: 'Chagumaira',
+                  )),
         );
       } on FirebaseAuthException catch (e) {
         // Handle errors
@@ -138,6 +147,8 @@ class _SignInScreenState extends State<SignInScreen> {
                                 MaterialPageRoute(
                                     builder: (context) => MainScreen(
                                           uid: '',
+                                          name: 'Nissi',
+                                          lastName: 'Chagumaira',
                                         )),
                                 (Route<dynamic> route) =>
                                     false, // Removes all previous routes

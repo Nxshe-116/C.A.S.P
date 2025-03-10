@@ -4,6 +4,15 @@ import 'package:admin/screens/dashboard/components/header.dart';
 import 'package:flutter/material.dart';
 
 class NotifictionScreen extends StatefulWidget {
+  final String name;
+  final String lastName;
+
+  const NotifictionScreen({
+    Key? key,
+    required this.name,
+    required this.lastName,
+  }) : super(key: key);
+
   @override
   State<NotifictionScreen> createState() => _NotifictionScreenState();
 }
@@ -11,14 +20,13 @@ class NotifictionScreen extends StatefulWidget {
 class _NotifictionScreenState extends State<NotifictionScreen> {
   @override
   Widget build(BuildContext context) {
-
     return SafeArea(
       child: SingleChildScrollView(
         primary: false,
         padding: EdgeInsets.all(defaultPadding),
         child: Column(
           children: [
-            Header(text: "Notifications"),
+            Header(text: "Notifications", name: widget.name, lastName: widget.name,),
             SizedBox(height: defaultPadding),
             SizedBox(
               height: 900,
