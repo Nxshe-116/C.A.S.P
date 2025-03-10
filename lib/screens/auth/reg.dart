@@ -79,15 +79,25 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         child: Stack(children: [
           Image.asset(
             "assets/images/agric.jpg",
-            fit: BoxFit.contain,
+            fit: BoxFit.fill,
           ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Expanded(
+                flex: 4,
+                child: Center(
+                    child: Text(
+                  'AI-Powered Insights \n for Agricultural Markets.',
+                  style: TextStyle(
+                      fontSize: 55,
+                      fontWeight: FontWeight.bold,
+                      color: bgColor),
+                )),
+              ),
               if (Responsive.isDesktop(context))
                 Expanded(
                     flex: 2,
-                    // Display the currently selected page
                     child: Container(
                       color: bgColor,
                       child: Padding(
@@ -140,17 +150,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         ),
                       ),
                     )),
-              Expanded(
-                flex: 4,
-                child: Center(
-                    child: Text(
-                  'AI-Powered Insights \n for Agricultural Markets.',
-                  style: TextStyle(
-                      fontSize: 55,
-                      fontWeight: FontWeight.bold,
-                      color: bgColor),
-                )),
-              ),
             ],
           ),
         ]),

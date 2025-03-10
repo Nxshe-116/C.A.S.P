@@ -4,6 +4,7 @@ import 'package:admin/screens/auth/sign_in.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -24,30 +25,46 @@ void main() async {
     print("Error initializing Firebase: $e");
   }
 
-  // Run the app
-  runApp(MyApp());
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => MenuAppController()),
+        // Add other providers here if needed
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'C.A.S.P',
-      theme: ThemeData.light().copyWith(
-        scaffoldBackgroundColor: Color(0xFFfefefe),
-        textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme)
-            .apply(bodyColor: Colors.black),
-        canvasColor: secondaryColor,
-      ),
-      home: MultiProvider(
-        providers: [
-          ChangeNotifierProvider(
-            create: (context) => MenuAppController(),
+    return ScreenUtilInit(
+      builder: (context, child) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'C.A.S.P',
+        theme: ThemeData(
+          useMaterial3: true, // Enable Material 3
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.green, // Adjust based on your branding
+            brightness: Brightness.light,
           ),
-        ],
-        child: SignInScreen(),
+          textTheme: GoogleFonts.poppinsTextTheme(
+            Theme.of(context).textTheme,
+          ).apply(bodyColor: Colors.black),
+          scaffoldBackgroundColor: const Color(0xFFfefefe),
+        ),
+        home: MultiProvider(
+          providers: [
+            ChangeNotifierProvider(
+              create: (context) => MenuAppController(),
+            ),
+          ],
+          child: SignInScreen(),
+        ),
       ),
     );
   }

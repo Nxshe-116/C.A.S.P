@@ -1,9 +1,11 @@
 import 'package:admin/constants.dart';
 import 'package:admin/responsive.dart';
 import 'package:admin/screens/auth/components/components.dart';
+import 'package:admin/screens/auth/reg.dart';
 import 'package:admin/screens/main/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class SignInScreen extends StatefulWidget {
   @override
@@ -14,6 +16,15 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController controller = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final FocusNode emailFocusNode = FocusNode(); // Add FocusNode for email
+  final FocusNode passwordFocusNode = FocusNode(); // Add FocusNode for password
+
+  @override
+  void dispose() {
+    emailFocusNode.dispose(); // Dispose FocusNode
+    passwordFocusNode.dispose(); // Dispose FocusNode
+    super.dispose();
+  }
 
   Future<void> signIn() async {
     if (_formKey.currentState!.validate()) {
@@ -108,17 +119,61 @@ class _SignInScreenState extends State<SignInScreen> {
                                       fontWeight: FontWeight.normal)),
                             ],
                           ),
-                          SizedBox(height: 25),
+                          SizedBox(height: 25.h),
                           CustomTextField(
+                              focusNode: emailFocusNode,
                               controller: controller,
                               hintText: "Email",
                               leadingIcon: Icons.person),
                           SizedBox(height: 15),
                           CustomPasswordField(
+                              focusNode: passwordFocusNode,
                               controller: passwordController,
                               hintText: "Password",
                               leadingIcon: Icons.lock),
-                          CustomButton(title: "Sign In",onTap: signIn,),
+                          CustomButton(
+                            title: "Sign In",
+                            onTap: () {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                    builder: (context) => MainScreen(
+                                          uid: '',
+                                        )),
+                                (Route<dynamic> route) =>
+                                    false, // Removes all previous routes
+                              );
+                            },
+                          ),
+                          SizedBox(height: 25.h),
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text("Don't have an account? ",
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.normal)),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  RegistrationScreen()),
+                                        );
+                                      },
+                                      child: Text("Sign up now",
+                                          style: TextStyle(
+                                              color: Colors.green,
+                                              fontSize: 15,
+                                              //  fontStyle: FontStyle.italic,
+                                              fontWeight: FontWeight.normal)),
+                                    ),
+                                  ],
+                                ),
+                              ]),
                         ],
                       ),
                     ),

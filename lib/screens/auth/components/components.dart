@@ -6,12 +6,14 @@ class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
   final IconData leadingIcon;
+  final FocusNode? focusNode;
 
   const CustomTextField({
     super.key,
     required this.controller,
     required this.hintText,
     required this.leadingIcon,
+    this.focusNode,
   });
 
   @override
@@ -20,6 +22,7 @@ class CustomTextField extends StatelessWidget {
       padding: const EdgeInsets.all(6.0),
       child: TextField(
         controller: controller,
+        focusNode: focusNode,
         decoration: InputDecoration(
           prefixIcon: Icon(
             leadingIcon,
@@ -30,7 +33,7 @@ class CustomTextField extends StatelessWidget {
           border: OutlineInputBorder(
             borderSide: BorderSide(
               color: secondaryColor,
-              width: 2.0,
+              width: 1.50,
             ),
             borderRadius: BorderRadius.circular(10.0),
           ),
@@ -58,12 +61,14 @@ class CustomPasswordField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final IconData leadingIcon;
+  final FocusNode? focusNode;
 
   const CustomPasswordField({
     super.key,
     required this.controller,
     required this.hintText,
     required this.leadingIcon,
+    this.focusNode,
   });
 
   @override
@@ -80,6 +85,7 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
       padding: const EdgeInsets.all(6.0),
       child: TextField(
         controller: widget.controller,
+        focusNode: widget.focusNode,
         obscureText: _isObscured,
         decoration: InputDecoration(
           prefixIcon: Icon(
@@ -105,7 +111,7 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
           border: OutlineInputBorder(
             borderSide: BorderSide(
               color: secondaryColor, // Set the border color to secondary color
-              width: 2.0, // Set border thickness to 1.0
+              width: 1.50, // Set border thickness to 1.0
             ),
             borderRadius: BorderRadius.circular(10.0),
           ),
@@ -144,31 +150,34 @@ class CustomButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(
-            color: Colors.black,
-            width: 2.5,
-            style: BorderStyle.solid,
-          ),
-          color: Colors.white,
+          // border: Border.all(
+          //   color: Colors.black,
+          //   width: 0,
+          //   style: BorderStyle.solid,
+          // ),
+          color: primaryColor,
           borderRadius: BorderRadius.all(
-            Radius.circular(30.0),
+            Radius.circular(10.0),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: primaryColor,
-              spreadRadius: 0,
-              blurRadius: 0,
-              offset: Offset(0, 5),
-            ),
-          ],
+          // boxShadow: [
+          //   BoxShadow(
+          //     color: secondaryColor,
+          //     spreadRadius: 0,
+          //     blurRadius: 0,
+          //     offset: Offset(0, 5),
+          //   ),
+          // ],
         ),
-        margin: EdgeInsets.only(top: 100, left: 20.0, right: 20.0),
+        margin: EdgeInsets.only(top: 40, left: 20.0, right: 20.0),
         width: 900.w,
-        height: 60.0,
+        height: 45.0,
         child: Center(
           child: Text(
             title,
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16.0),
+            style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16.0,
+                color: Colors.white),
           ),
         ),
       ),

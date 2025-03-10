@@ -11,7 +11,8 @@ import '../../../constants.dart';
 class Header extends StatelessWidget {
   final String text;
   const Header({
-    Key? key, required this.text,
+    Key? key,
+    required this.text,
   }) : super(key: key);
 
   @override
@@ -25,7 +26,7 @@ class Header extends StatelessWidget {
           ),
         if (!Responsive.isMobile(context))
           Text(
-           text,
+            text,
             style: Theme.of(context).textTheme.titleLarge,
           ),
         if (!Responsive.isMobile(context))
@@ -51,7 +52,7 @@ class ProfileCard extends StatelessWidget {
         vertical: defaultPadding / 2,
       ),
       decoration: BoxDecoration(
-        color: secondaryColor,
+        color: const Color.fromARGB(255, 223, 223, 223),
         borderRadius: const BorderRadius.all(Radius.circular(10)),
         border: Border.all(color: Colors.white10),
       ),
@@ -93,7 +94,7 @@ class SearchField extends StatelessWidget {
     return TextField(
       decoration: InputDecoration(
         hintText: "Search",
-        fillColor: secondaryColor,
+        fillColor: Color.fromARGB(255, 223, 223, 223),
         filled: true,
         border: OutlineInputBorder(
           borderSide: BorderSide.none,
@@ -105,13 +106,13 @@ class SearchField extends StatelessWidget {
             padding: EdgeInsets.all(defaultPadding * 0.99),
             margin: EdgeInsets.symmetric(horizontal: defaultPadding / 6),
             decoration: BoxDecoration(
-              color: primaryColor,
+              color: Color.fromARGB(255, 223, 223, 223),
               borderRadius: const BorderRadius.all(Radius.circular(10)),
             ),
             child: SvgPicture.asset(
               "assets/icons/Search.svg",
-              color: Colors.white,
-              height: 15,
+              color: primaryColor,
+              height: 20,
             ),
           ),
         ),
