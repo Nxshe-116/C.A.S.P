@@ -38,11 +38,11 @@ class _MainScreenState extends State<MainScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     pages = [
-      DashboardScreen(name: widget.name, lastName: widget.lastName),
-      PortfolioScreen(name: widget.name, lastName: widget.lastName),
-      InsightScreen(name: widget.name, lastName: widget.lastName),
-      NotifictionScreen(name: widget.name, lastName: widget.lastName),
-      ProfileScreen(name: widget.name, lastName: widget.lastName),
+      DashboardScreen(name: widget.name, lastName: widget.lastName, uid: widget.uid,),
+      PortfolioScreen(name: widget.name, lastName: widget.lastName, uid: widget.uid,),
+      InsightScreen(name: widget.name, lastName: widget.lastName, uid: widget.uid,),
+      NotifictionScreen(name: widget.name, lastName: widget.lastName, uid: widget.uid,),
+      ProfileScreen(name: widget.name, lastName: widget.lastName, uid: widget.uid,),
     ];
   }
 

@@ -6,11 +6,12 @@ class PortfolioScreen extends StatelessWidget {
 
     final String name;
   final String lastName;
+  final String uid;
 
   const PortfolioScreen({
     Key? key,
     required this.name,
-    required this.lastName,
+    required this.lastName, required this.uid,
   }) : super(key: key);
 
   @override

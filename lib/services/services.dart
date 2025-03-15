@@ -2,13 +2,15 @@ import 'dart:convert';
 import 'package:admin/models/climate.dart';
 import 'package:admin/models/company.dart';
 import 'package:admin/models/predictions.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl =
-      'https://casp-z2u5.onrender.com'; // Ensure this URL is correct
 
-  // Fetch all companies
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  static const String baseUrl =  'https://casp-z2u5.onrender.com'; 
+
+
   Future<List<Company>> fetchCompanies() async {
     final response = await http.get(Uri.parse('$baseUrl/api/companies/'));
 
@@ -114,6 +116,28 @@ class ApiService {
       return ClimateData.fromJson(data);
     } else {
       throw Exception('Failed to load climate data');
+    }
+  }
+
+
+
+
+  
+
+
+
+  Future<void> addCompaniesToUser(String uid, List<Company> companies) async {
+    try {
+      // Convert the list of companies to a list of maps
+      final companiesData =
+          companies.map((company) => company.toJson()).toList();
+
+      // Update the user's document in Firestore
+      await firestore.collection('users').doc(uid).update({
+        'companies': FieldValue.arrayUnion(companiesData),
+      });
+    } catch (e) {
+      throw Exception('Failed to add companies to user: $e');
     }
   }
 }

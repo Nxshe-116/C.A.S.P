@@ -12,11 +12,12 @@ import 'components/storage_details.dart';
 class DashboardScreen extends StatelessWidget {
   final String name;
   final String lastName;
+  final String uid;
 
   const DashboardScreen({
     Key? key,
     required this.name,
-    required this.lastName,
+    required this.lastName, required this.uid,
   }) : super(key: key);
 
   @override
@@ -40,7 +41,7 @@ class DashboardScreen extends StatelessWidget {
                   flex: 5,
                   child: Column(
                     children: [
-                      MyFiles(),
+                      MyFiles(uid:uid),
                       SizedBox(height: defaultPadding),
                       RecentFiles(),
                       if (Responsive.isMobile(context))

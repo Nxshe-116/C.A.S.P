@@ -16,11 +16,12 @@ class ProfileScreen extends StatelessWidget {
 
     final String name;
   final String lastName;
+  final String uid;
 
   const ProfileScreen({
     Key? key,
     required this.name,
-    required this.lastName,
+    required this.lastName, required String this.uid,
   }) : super(key: key);
 
   @override
