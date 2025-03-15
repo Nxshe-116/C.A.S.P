@@ -356,6 +356,12 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "shimmer",
+      "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/shimmer-3.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
       "name": "sky_engine",
       "rootUri": "file:///Users/nashechagumaira/development/flutter/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
@@ -470,7 +476,7 @@
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2025-03-10T02:37:04.460387Z",
+  "generated": "2025-03-15T16:48:44.585587Z",
   "generator": "pub",
   "generatorVersion": "3.7.0",
   "flutterRoot": "file:///Users/nashechagumaira/development/flutter",

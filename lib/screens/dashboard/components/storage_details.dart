@@ -1,10 +1,11 @@
 import 'package:admin/models/my_files.dart';
 import 'package:admin/responsive.dart';
+import 'package:admin/screens/dashboard/components/climate.dart';
 import 'package:admin/screens/dashboard/components/stock_info.dart';
 import 'package:flutter/material.dart';
 
 import '../../../constants.dart';
-import 'chart.dart';
+// import 'chart.dart';
 
 class StockDetails extends StatelessWidget {
   final StockInfo stockDetails;
@@ -25,14 +26,17 @@ class StockDetails extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Stock Details",
+            "Climate Details",
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
             ),
           ),
           SizedBox(height: defaultPadding),
-          Chart(), // You can update the chart to reflect stock market trends
+       ClimateCard(),
+          
+          
+           // You can update the chart to reflect stock market trends
           StockInfoCard(
             svgSrc: "assets/icons/trace.svg", // Update with a relevant icon
             title: "${stockDetails.companyName}- ${stockDetails.ticker}",
@@ -40,6 +44,8 @@ class StockDetails extends StatelessWidget {
                 stockDetails.closingPrice, // Share price or another metric
             numOfShares: 1000000000, // This could represent number of shares
           ),
+       
+       
           SizedBox(height: defaultPadding),
           Row(
             children: [

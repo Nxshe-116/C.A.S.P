@@ -132,32 +132,6 @@ class StockListTile extends StatelessWidget {
   }
 }
 
-// Your custom ChartWidget to display stock data
-// class ChartWidget extends StatelessWidget {
-//   final StockInfo? stock;
-
-//   const ChartWidget({Key? key, this.stock}) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     if (stock == null) {
-//       return Center(child: Text("Select a stock to see its chart."));
-//     }
-
-//     // Example data to display. Replace with actual chart rendering logic.
-//     return Center(
-//       child: Column(
-//         children: [
-//           Text(
-//             "Chart for ${stock!.companyName} - Price: \$${stock!.closingPrice}",
-//             style: TextStyle(color: Colors.black),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 class ChartWidget extends StatelessWidget {
   final StockInfo? stock;
 
@@ -165,21 +139,20 @@ class ChartWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<SalesData> priceChartData = [];
-    List<SalesData> climateImpactChartData = [];
+    List<ChartData> chartData = [];
 
     if (stock != null) {
-      // Populate the price chart data based on the selected stock
+      // Populate the chart data based on the selected stock
       for (int i = 0; i < stock!.priceHistory.length; i++) {
-        priceChartData.add(SalesData(
-            DateTime.now().subtract(Duration(
-                days: (stock!.priceHistory.length - i - 1) *
-                    30)), // Adjusted to monthly intervals
-            stock!.priceHistory[i]));
-        climateImpactChartData.add(SalesData(
-            DateTime.now().subtract(Duration(
-                days: (stock!.climateImpactHistory.length - i - 1) * 30)),
-            stock!.climateImpactHistory[i]));
+        chartData.add(ChartData(
+          x: DateTime.now().subtract(Duration(
+              days: (stock!.priceHistory.length - i - 1) *
+                  30)), // Adjusted to monthly intervals
+          open: stock!.priceHistory[i].open,
+          high: stock!.priceHistory[i].high,
+          low: stock!.priceHistory[i].low,
+          close: stock!.priceHistory[i].closingPrice,
+        ));
       }
     }
 
@@ -192,31 +165,37 @@ class ChartWidget extends StatelessWidget {
           majorGridLines: const MajorGridLines(width: 0),
         ),
         series: <CartesianSeries>[
-          // Line series for price history
-          LineSeries<SalesData, DateTime>(
-            name: 'Price',
-            dataSource: priceChartData,
-            xValueMapper: (SalesData sales, _) => sales.year,
-            yValueMapper: (SalesData sales, _) => sales.sales,
-          ),
-          // Line series for climate impact history
-          LineSeries<SalesData, DateTime>(
-            name: 'Climate Impact',
-            dataSource: climateImpactChartData,
-            xValueMapper: (SalesData sales, _) => sales.year,
-            yValueMapper: (SalesData sales, _) => sales.sales,
-            color: Colors.green,
-          ),
+          // Candle series for stock price data
+          CandleSeries<ChartData, DateTime>(
+              name: 'Stock Price',
+              dataSource: chartData,
+              xValueMapper: (ChartData data, _) => data.x,
+              lowValueMapper: (ChartData data, _) => data.low,
+              highValueMapper: (ChartData data, _) => data.high,
+              openValueMapper: (ChartData data, _) => data.open,
+              closeValueMapper: (ChartData data, _) => data.close,
+              borderRadius: BorderRadius.all(Radius.circular(5)),
+              width: 0.5,
+              spacing: 0.2),
         ],
-      //  legend: Legend(isVisible: true),
         tooltipBehavior: TooltipBehavior(enable: true),
       ),
     );
   }
 }
 
-class SalesData {
-  SalesData(this.year, this.sales);
-  final DateTime year;
-  final double sales;
+class ChartData {
+  ChartData({
+    required this.x,
+    required this.open,
+    required this.high,
+    required this.low,
+    required this.close,
+  });
+
+  final DateTime x;
+  final double open;
+  final double high;
+  final double low;
+  final double close;
 }

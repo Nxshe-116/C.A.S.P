@@ -1,4 +1,5 @@
 import 'package:admin/models/my_files.dart';
+import 'package:admin/models/tickers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -54,7 +55,7 @@ class StockInfoCard extends StatelessWidget {
                 .copyWith(color: Colors.grey[850]),
           ),
           Text(
-            info.ticker,
+            generateTicker(info.companyName),
             style: Theme.of(context)
                 .textTheme
                 .labelSmall!
@@ -89,47 +90,3 @@ class StockInfoCard extends StatelessWidget {
     );
   }
 }
-
-// class ProgressLine extends StatelessWidget {
-//   const ProgressLine({
-//     Key? key,
-//     this.color = primaryColor,
-//     required this.percentage,
-//   }) : super(key: key);
-
-//   final Color? color;
-//   final int? percentage;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return ConstrainedBox(
-//       constraints: BoxConstraints(
-//         maxWidth: double.infinity, // Provide max width constraint
-//         minHeight: 5,
-//         maxHeight: 5,
-//       ),
-//       child: LayoutBuilder(
-//         builder: (context, constraints) => Stack(
-//           children: [
-//             Container(
-//               width: constraints.maxWidth, // Full width as per constraints
-//               height: 5,
-//               decoration: BoxDecoration(
-//                 color: color!.withOpacity(0.1),
-//                 borderRadius: BorderRadius.all(Radius.circular(10)),
-//               ),
-//             ),
-//             Container(
-//               width: constraints.maxWidth * (percentage! / 100),
-//               height: 5,
-//               decoration: BoxDecoration(
-//                 color: color,
-//                 borderRadius: BorderRadius.all(Radius.circular(10)),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }

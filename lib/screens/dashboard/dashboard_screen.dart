@@ -10,15 +10,14 @@ import 'components/recent_files.dart';
 import 'components/storage_details.dart';
 
 class DashboardScreen extends StatelessWidget {
-    final String name;
+  final String name;
   final String lastName;
 
-    const DashboardScreen({
+  const DashboardScreen({
     Key? key,
     required this.name,
     required this.lastName,
   }) : super(key: key);
-
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +27,11 @@ class DashboardScreen extends StatelessWidget {
         padding: EdgeInsets.all(defaultPadding),
         child: Column(
           children: [
-            Header(text: "Dashboard", name: name, lastName: lastName,),
+            Header(
+              text: "Dashboard",
+              name: name,
+              lastName: lastName,
+            ),
             SizedBox(height: defaultPadding),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,28 +48,42 @@ class DashboardScreen extends StatelessWidget {
                       if (Responsive.isMobile(context))
                         StockDetails(
                           stockDetails: StockInfo(
-                            companyName: "Seed Co Limited",
-                            ticker: "SEED",
-                            closingPrice: 180.75,
-                            priceChange: -0.8,
-                            climateImpactFactor: 1.1,
+                            companyName: "Tanganda Tea Company",
+                            ticker: "TANG",
+                            closingPrice: 150.45,
+                            priceChange: 1.5,
+                            climateImpactFactor: 0.9,
                             priceHistory: [
-                              182.30,
-                              181.50,
-                              181.00,
-                              180.00,
-                              179.80,
-                              180.75,
-                              180.75
+                              PriceData(
+                                  open: 145.00,
+                                  high: 150.00,
+                                  low: 144.00,
+                                  closingPrice: 150.45),
+                              PriceData(
+                                  open: 148.50,
+                                  high: 150.50,
+                                  low: 146.00,
+                                  closingPrice: 149.80),
+                              // Add similar data for other entries
                             ],
                             climateImpactHistory: [
+                              0.7,
+                              0.8,
+                              0.7,
+                              0.9,
+                              0.8,
+                              0.7,
+                              0.8,
+                              0.7,
+                              0.9,
+                              0.8,
+                              0.9,
                               1.0,
+                              0.8,
+                              0.9,
                               1.0,
-                              1.1,
-                              1.1,
-                              1.1,
-                              1.1,
-                              1.1
+                              0.8,
+                              0.9
                             ],
                           ),
                         ),
@@ -81,28 +98,42 @@ class DashboardScreen extends StatelessWidget {
                     flex: 2,
                     child: StockDetails(
                       stockDetails: StockInfo(
-                        companyName: "Seed Co Limited",
-                        ticker: "SEED",
-                        closingPrice: 180.75,
-                        priceChange: -0.8,
-                        climateImpactFactor: 1.1,
+                        companyName: "Tanganda Tea Company",
+                        ticker: "TANG",
+                        closingPrice: 150.45,
+                        priceChange: 1.5,
+                        climateImpactFactor: 0.9,
                         priceHistory: [
-                          182.30,
-                          181.50,
-                          181.00,
-                          180.00,
-                          179.80,
-                          180.75,
-                          180.75
+                          PriceData(
+                              open: 145.00,
+                              high: 150.00,
+                              low: 144.00,
+                              closingPrice: 150.45),
+                          PriceData(
+                              open: 148.50,
+                              high: 150.50,
+                              low: 146.00,
+                              closingPrice: 149.80),
+                          // Add similar data for other entries
                         ],
                         climateImpactHistory: [
+                          0.7,
+                          0.8,
+                          0.7,
+                          0.9,
+                          0.8,
+                          0.7,
+                          0.8,
+                          0.7,
+                          0.9,
+                          0.8,
+                          0.9,
                           1.0,
+                          0.8,
+                          0.9,
                           1.0,
-                          1.1,
-                          1.1,
-                          1.1,
-                          1.1,
-                          1.1
+                          0.8,
+                          0.9
                         ],
                       ),
                     ),
