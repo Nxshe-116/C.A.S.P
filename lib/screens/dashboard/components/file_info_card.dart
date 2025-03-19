@@ -1,6 +1,7 @@
 import 'package:admin/models/my_files.dart';
 import 'package:admin/models/tickers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../constants.dart';
@@ -30,8 +31,8 @@ class StockInfoCard extends StatelessWidget {
             children: [
               Container(
                 padding: EdgeInsets.all(defaultPadding * 0.75),
-                height: 40,
-                width: 40,
+                height: 36.h,
+                width: 10.w,
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEFEFE),
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
@@ -41,6 +42,7 @@ class StockInfoCard extends StatelessWidget {
                   colorFilter: ColorFilter.mode(primaryColor, BlendMode.srcIn),
                 ),
               ),
+        
               Icon(Icons.more_vert, color: Colors.grey),
             ],
           ),
@@ -71,7 +73,7 @@ class StockInfoCard extends StatelessWidget {
           Row(
             children: [
               Text("\$${info.closingPrice.toStringAsFixed(2)}",
-                  style: TextStyle(fontSize: 18)),
+                  style: TextStyle(fontSize: 16)),
               // ProgressLine(
               //   color: info.color,
               //   percentage: (info.percentageChange! * 100)

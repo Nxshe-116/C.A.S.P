@@ -5,7 +5,8 @@ import 'package:admin/responsive.dart';
 import 'package:admin/services/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
- 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/svg.dart';
 
 import '../../../constants.dart';
 import 'file_info_card.dart';
@@ -100,7 +101,7 @@ class _MyFilesState extends State<MyFiles> {
   }
 }
 
-class FileInfoCardGridView extends StatelessWidget {
+class FileInfoCardGridView extends StatefulWidget {
   const FileInfoCardGridView({
     Key? key,
     this.crossAxisCount = 4,
@@ -111,22 +112,32 @@ class FileInfoCardGridView extends StatelessWidget {
   final double childAspectRatio;
 
   @override
+  State<FileInfoCardGridView> createState() => _FileInfoCardGridViewState();
+}
+
+class _FileInfoCardGridViewState extends State<FileInfoCardGridView> {
+  @override
   Widget build(BuildContext context) {
     return GridView.builder(
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       itemCount: demoStockData.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
+        crossAxisCount: widget.crossAxisCount,
         crossAxisSpacing: defaultPadding,
         mainAxisSpacing: defaultPadding,
-        childAspectRatio: childAspectRatio,
+        childAspectRatio: widget.childAspectRatio,
       ),
       itemBuilder: (context, index) =>
           StockInfoCard(info: demoStockData[index]),
     );
   }
 }
+
+
+
+
+
 
 void showDataDialog(
   BuildContext context,
@@ -187,17 +198,39 @@ void showDataDialog(
                               itemCount: companies.length,
                               itemBuilder: (context, index) {
                                 final company = companies[index];
-                                return CheckboxListTile(
-                                  value: isSelected[index],
-                                  onChanged: (value) {
-                                    setState(() {
-                                      // StatefulBuilder allows state updates here
-                                      isSelected[index] = value ?? false;
-                                    });
-                                  },
-                                  title: Text(company.name),
-                                  subtitle: Text(
-                                      'Symbol: ${generateTicker(company.symbol)}'),
+                                return Row(
+                                  children: [
+                                    Container(
+                                      padding:
+                                          EdgeInsets.all(defaultPadding * 0.75),
+                                      height: 36.h,
+                                      width: 10.w,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFEFEFE),
+                                        borderRadius: const BorderRadius.all(
+                                            Radius.circular(10)),
+                                      ),
+                                      child: SvgPicture.asset(
+                                        "assets/icons/sprout.svg",
+                                        colorFilter: ColorFilter.mode(
+                                            primaryColor, BlendMode.srcIn),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: CheckboxListTile(
+                                        value: isSelected[index],
+                                        onChanged: (value) {
+                                          setState(() {
+                                            // StatefulBuilder allows state updates here
+                                            isSelected[index] = value ?? false;
+                                          });
+                                        },
+                                        title: Text(company.name),
+                                        subtitle: Text(
+                                            'Symbol: ${generateTicker(company.symbol)}'),
+                                      ),
+                                    ),
+                                  ],
                                 );
                               },
                             );

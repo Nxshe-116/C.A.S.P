@@ -1,10 +1,12 @@
 import 'package:admin/constants.dart';
 import 'package:admin/responsive.dart';
 import 'package:admin/screens/auth/components/components.dart';
+import 'package:admin/screens/main/main_screen.dart';
 // import 'package:admin/screens/auth/sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegistrationScreen extends StatefulWidget {
   @override
@@ -19,56 +21,86 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final formKey = GlobalKey<FormState>();
 
   Future<void> _register() async {
-    if (formKey.currentState!.validate()) {
-      try {
-        final firstName = firstNameController.text.trim();
-        final lastName = lastNameController.text.trim();
-        final email = emailController.text.trim();
-        final password = passwordController.text.trim();
+    // if (formKey.currentState!.validate()) {
+    try {
+      final firstName = firstNameController.text.trim();
+      final lastName = lastNameController.text.trim();
+      final email = emailController.text.trim();
+      final password = passwordController.text.trim();
 
-        // Create user with Firebase Authentication
-        final userCredential =
-            await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+      //  print('Details: $firstName,$lastName,$email,$password');
 
-        // Save user details to Firestore
-        final userId = userCredential.user!.uid;
-        await FirebaseFirestore.instance.collection('users').doc(userId).set({
-          'userId': userId,
-          'firstName': firstName,
-          'lastName': lastName,
-          'email': email,
-          'selectedCompanies': [], // Initialize with an empty list
-        });
+      final userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration successful!')),
-        );
+      final userId = 'user${DateTime.now().millisecondsSinceEpoch}';
 
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => HomeScreen(userId: userId)),
-        // );
-      } on FirebaseAuthException catch (e) {
-        // Handle errors
-        String errorMessage;
-        switch (e.code) {
-          case 'email-already-in-use':
-            errorMessage = 'This email is already registered.';
-            break;
-          case 'weak-password':
-            errorMessage = 'The password is too weak.';
-            break;
-          default:
-            errorMessage = 'An error occurred. Please try again.';
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
+      await FirebaseFirestore.instance.collection('users').doc(userId).set({
+        'userId': userId,
+        'firstName': firstName,
+        'lastName': lastName,
+        'email': email,
+        'selectedCompanies': [], // Initialize with an empty list
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          'Successfully registered',
+          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white, // Change background color
+        duration: Duration(seconds: 3), // Set duration
+        behavior: SnackBarBehavior.floating, // Make it floating
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10), // Add rounded corners
+        ),
+      ));
+      // Save login state in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('name', firstName);
+      await prefs.setString('lastName', lastName);
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+            builder: (context) => MainScreen(
+                  uid: userCredential.user!.uid,
+                  name: firstName,
+                  lastName: lastName,
+                )),
+        (Route<dynamic> route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      // Handle errors
+      String errorMessage;
+      switch (e.code) {
+        case 'email-already-in-use':
+          errorMessage = 'This email is already registered.';
+          break;
+        case 'weak-password':
+          errorMessage = 'The password is too weak.';
+          break;
+        default:
+          errorMessage = 'An error occurred. Please try again.';
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          errorMessage,
+          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white, // Change background color
+        duration: Duration(seconds: 3), // Set duration
+        behavior: SnackBarBehavior.floating, // Make it floating
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10), // Add rounded corners
+        ),
+      ));
     }
+    // }
   }
 
   @override
@@ -143,7 +175,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                 hintText: "Password",
                                 leadingIcon: Icons.lock),
                             CustomButton(
-                              title: "Sign In",
+                              title: "Register",
                               onTap: _register,
                             ),
                           ],
@@ -155,5 +187,31 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         ]),
       ),
     );
+  }
+
+  Future<void> registerUser(
+      String email, String password, String name, String lastName) async {
+    try {
+      // Create user with Firebase Authentication
+      final userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Store additional user data in Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set({
+        'name': name,
+        'lastName': lastName,
+        'email': email,
+        'uid': userCredential.user!.uid,
+      });
+    } catch (e) {
+      print('Error during registration: $e');
+      rethrow;
+    }
   }
 }

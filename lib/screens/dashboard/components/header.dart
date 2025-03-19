@@ -2,9 +2,12 @@
 
 import 'package:admin/controllers/menu_app_controller.dart';
 import 'package:admin/responsive.dart';
+import 'package:admin/screens/auth/sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../constants.dart';
 
@@ -110,7 +113,7 @@ class ProfileCard extends StatelessWidget {
               } else if (value == 'settings') {
                 _navigateToSettings(context);
               } else if (value == 'logout') {
-                _logout(context);
+                logout(context);
               }
             },
             itemBuilder: (BuildContext context) {
@@ -173,11 +176,60 @@ class ProfileCard extends StatelessWidget {
     // Navigator.pushNamed(context, '/settings');
   }
 
-  // Logout function
-  void _logout(BuildContext context) {
-    print("User logged out");
-    // Example: Perform logout logic (e.g., clear user session, navigate to login screen)
-    // Navigator.pushReplacementNamed(context, '/login');
+  void confirmLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Sign Out"),
+          content: Text("Are you sure you want to sign out?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(), // Close dialog
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                confirmLogout(context); // Call logout function
+              },
+              child: Text("Sign Out", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void logout(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear(); 
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            'User logged out.',
+            style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.white, // Change background color
+          duration: Duration(seconds: 3), // Set duration
+          behavior: SnackBarBehavior.floating, // Make it floating
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10), // Add rounded corners
+          ),
+        ));
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => SignInScreen()),
+        (Route<dynamic> route) => false,
+      );
+    } catch (e) {
+      print("Error during logout: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error logging out. Please try again.')),
+      );
+    }
   }
 }
 

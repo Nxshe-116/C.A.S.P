@@ -3,6 +3,7 @@ import 'package:admin/responsive.dart';
 import 'package:admin/screens/auth/components/components.dart';
 import 'package:admin/screens/auth/reg.dart';
 import 'package:admin/screens/main/main_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -16,7 +17,7 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController controller = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  //final _formKey = GlobalKey<FormState>();
   final FocusNode emailFocusNode = FocusNode(); // Add FocusNode for email
   final FocusNode passwordFocusNode = FocusNode(); // Add FocusNode for password
 
@@ -28,50 +29,153 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   Future<void> signIn() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        final email = controller.text.trim();
-        final password = passwordController.text.trim();
+    // if (_formKey.currentState!.validate()) {
+    try {
+      final email = controller.text.trim();
+      final password = passwordController.text.trim();
 
-        // Sign in with Firebase Authentication
-        final userCredential =
-            await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+      // Check if email or password is empty
+      if (email.isEmpty || password.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            'Email and password cannot be empty.',
+            style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.white, // Change background color
+          duration: Duration(seconds: 3), // Set duration
+          behavior: SnackBarBehavior.floating, // Make it floating
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10), // Add rounded corners
+          ),
+        ));
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
-
-        // change after auth
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => MainScreen(
-                    uid: userCredential.user!.uid,
-                    name: 'Nashe',
-                    lastName: 'Chagumaira',
-                  )),
-        );
-      } on FirebaseAuthException catch (e) {
-        // Handle errors
-        String errorMessage;
-        switch (e.code) {
-          case 'user-not-found':
-            errorMessage = 'No user found with this email.';
-            break;
-          case 'wrong-password':
-            errorMessage = 'Incorrect password.';
-            break;
-          default:
-            errorMessage = 'An error occurred. Please try again.';
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
+        return;
       }
+
+      final userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Check if userCredential or user is null
+      if (userCredential.user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            'Authentication failed. Please try again.',
+            style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.white, // Change background color
+          duration: Duration(seconds: 3), // Set duration
+          behavior: SnackBarBehavior.floating, // Make it floating
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10), // Add rounded corners
+          ),
+        ));
+
+        return;
+      }
+
+      // Fetch user data from Firestore
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .get();
+
+      // Check if user document exists and has data
+      if (!userDoc.exists || userDoc.data() == null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            'User not found.',
+            style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.white, // Change background color
+          duration: Duration(seconds: 3), // Set duration
+          behavior: SnackBarBehavior.floating, // Make it floating
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10), // Add rounded corners
+          ),
+        ));
+
+        return;
+      }
+
+      // Extract user data
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final name = userData['name'] ?? '';
+      final lastName = userData['lastName'] ?? '';
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('name', name);
+      await prefs.setString('lastName', lastName);
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          'Signed In Successfully',
+          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white, // Change background color
+        duration: Duration(seconds: 3), // Set duration
+        behavior: SnackBarBehavior.floating, // Make it floating
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10), // Add rounded corners
+        ),
+      ));
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+            builder: (context) => MainScreen(
+                  uid: userCredential.user!.uid,
+                  name: name,
+                  lastName: lastName,
+                )),
+        (Route<dynamic> route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No user found with this email.';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Incorrect password or email.';
+          break;
+        default:
+          errorMessage = 'An error occurred. Please try again.';
+      }
+
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text(errorMessage)),
+      // );
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          errorMessage,
+          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white, // Change background color
+        duration: Duration(seconds: 3), // Set duration
+        behavior: SnackBarBehavior.floating, // Make it floating
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10), // Add rounded corners
+        ),
+      ));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          'An unexpected error occurred. Please try again.',
+          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white, // Change background color
+        duration: Duration(seconds: 3), // Set duration
+        behavior: SnackBarBehavior.floating, // Make it floating
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10), // Add rounded corners
+        ),
+      ));
     }
+    // }
   }
 
   @override
@@ -143,16 +247,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           CustomButton(
                             title: "Sign In",
                             onTap: () {
-                              Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute(
-                                    builder: (context) => MainScreen(
-                                          uid: '',
-                                          name: 'Nissi',
-                                          lastName: 'Chagumaira',
-                                        )),
-                                (Route<dynamic> route) =>
-                                    false, // Removes all previous routes
-                              );
+                              signIn();
                             },
                           ),
                           SizedBox(height: 25.h),
