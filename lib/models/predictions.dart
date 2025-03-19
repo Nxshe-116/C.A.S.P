@@ -1,15 +1,15 @@
 class RealTimePrediction {
   final String symbol;
   final double predictedClose;
-  final String timestamp;
+  final DateTime timestamp;
 
   RealTimePrediction({required this.symbol, required this.predictedClose, required this.timestamp});
 
   factory RealTimePrediction.fromJson(Map<String, dynamic> json) {
     return RealTimePrediction(
-      symbol: json['symbol'],
-      predictedClose: json['predicted_close'].toDouble(),
-      timestamp: json['timestamp'],
+      predictedClose: json['predicted_close'] as double,
+      symbol: json['symbol'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
     );
   }
 }

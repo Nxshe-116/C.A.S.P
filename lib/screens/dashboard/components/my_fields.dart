@@ -1,8 +1,10 @@
 import 'package:admin/models/company.dart';
 import 'package:admin/models/my_files.dart';
 import 'package:admin/models/notifications.dart';
+import 'package:admin/models/predictions.dart';
 import 'package:admin/models/tickers.dart';
 import 'package:admin/responsive.dart';
+import 'package:admin/screens/dashboard/components/file_info_card.dart';
 import 'package:admin/services/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +12,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../../../constants.dart';
-import 'file_info_card.dart';
 
 class MyFiles extends StatefulWidget {
   final String uid;
@@ -29,11 +30,8 @@ class _MyFilesState extends State<MyFiles> {
   List<bool> isSelected = []; // To track selected companies
   List<Company> companies = [];
 
-  // final prefs = await SharedPreferences.getInstance();
-
-  //  final uid = prefs.getString('uid');
-
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +42,11 @@ class _MyFilesState extends State<MyFiles> {
     setState(() {
       isSelected[index] = value;
     });
+  }
+
+  // Callback function to refresh the grid
+  void refreshGrid() {
+    setState(() {});
   }
 
   @override
@@ -67,8 +70,7 @@ class _MyFilesState extends State<MyFiles> {
                       defaultPadding / (Responsive.isMobile(context) ? 2 : 1),
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(6.0), // Slightly rounded corners
+                  borderRadius: BorderRadius.circular(6.0),
                 ),
               ),
               onPressed: () {
@@ -78,18 +80,13 @@ class _MyFilesState extends State<MyFiles> {
                   isSelected,
                   updateSelection,
                   apiService,
-                  widget.uid, // Pass the uid
+                  widget.uid,
+                  refreshGrid, // Pass the callback here
                 );
               },
-              icon: Icon(
-                Icons.add,
-                color: Colors.white,
-              ),
-              label: Text(
-                "Add New",
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
+              icon: Icon(Icons.add, color: Colors.white),
+              label: Text("Add New", style: TextStyle(color: Colors.white)),
+            )
           ],
         ),
         SizedBox(height: defaultPadding),
@@ -97,10 +94,17 @@ class _MyFilesState extends State<MyFiles> {
           mobile: FileInfoCardGridView(
             crossAxisCount: _size.width < 650 ? 2 : 4,
             childAspectRatio: _size.width < 650 && _size.width > 350 ? 1.3 : 1,
+            userId: widget.uid,
+            refreshCallback: refreshGrid, // Pass the callback here
           ),
-          tablet: FileInfoCardGridView(),
+          tablet: FileInfoCardGridView(
+            userId: widget.uid,
+            refreshCallback: refreshGrid, // Pass the callback here
+          ),
           desktop: FileInfoCardGridView(
             childAspectRatio: _size.width < 1400 ? 1.1 : 1.4,
+            userId: widget.uid,
+            refreshCallback: refreshGrid, // Pass the callback here
           ),
         ),
       ],
@@ -109,10 +113,14 @@ class _MyFilesState extends State<MyFiles> {
 }
 
 class FileInfoCardGridView extends StatefulWidget {
+  final String userId;
+  final VoidCallback refreshCallback; // Add this
   const FileInfoCardGridView({
     Key? key,
     this.crossAxisCount = 4,
     this.childAspectRatio = 1,
+    required this.userId,
+    required this.refreshCallback, // Add this
   }) : super(key: key);
 
   final int crossAxisCount;
@@ -123,20 +131,81 @@ class FileInfoCardGridView extends StatefulWidget {
 }
 
 class _FileInfoCardGridViewState extends State<FileInfoCardGridView> {
+  final Map<String, RealTimePrediction> realTimeData = {};
+  final ApiService apiService = ApiService();
+  List<String> watchlist = [];
+
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSelectedCompanies();
+  }
+
+  Future<void> fetchSelectedCompanies() async {
+    try {
+      final DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>?;
+        final List<dynamic> selectedCompanies =
+            userData?['selectedCompanies'] ?? [];
+        final List<String> tickers = selectedCompanies
+            .map((company) => company['symbol'] as String)
+            .toList();
+        final List<String> companies = selectedCompanies
+            .map((company) => company['name'] as String)
+            .toList();
+
+        setState(() {
+          watchlist = companies;
+        });
+
+        await fetchRealTimeData(tickers);
+      } else {
+        print('User document not found.');
+      }
+    } catch (e) {
+      print('Error fetching selected companies: $e');
+    }
+  }
+
+  Future<void> fetchRealTimeData(List<String> tickers) async {
+    for (final ticker in tickers) {
+      final realTimePrediction =
+          await apiService.fetchRealTimePrediction(ticker);
+      setState(() {
+        realTimeData[ticker] = realTimePrediction!;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      itemCount: demoStockData.length,
+      itemCount: watchlist.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: widget.crossAxisCount,
         crossAxisSpacing: defaultPadding,
         mainAxisSpacing: defaultPadding,
         childAspectRatio: widget.childAspectRatio,
       ),
-      itemBuilder: (context, index) =>
-          StockInfoCard(info: demoStockData[index]),
+      itemBuilder: (context, index) {
+        final stock = watchlist[index];
+        final realTimeInfo = realTimeData[stock];
+
+        return StockInfoCard(
+          info: stock,
+          realTimeData: realTimeInfo,
+          isLoading: realTimeInfo == null,
+        );
+      },
     );
   }
 }
@@ -148,15 +217,15 @@ void showDataDialog(
   Function(int index, bool value) updateSelection,
   ApiService apiService,
   String uid,
+  VoidCallback refreshCallback, // Add this
 ) {
-  List<Company> companies = []; // Local companies list
+  List<Company> companies = [];
 
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return StatefulBuilder(
         builder: (context, setState) {
-          // This ensures we can use setState
           return AlertDialog(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
@@ -223,7 +292,6 @@ void showDataDialog(
                                         value: isSelected[index],
                                         onChanged: (value) {
                                           setState(() {
-                                            // StatefulBuilder allows state updates here
                                             isSelected[index] = value ?? false;
                                           });
                                         },
@@ -265,22 +333,14 @@ void showDataDialog(
                   ),
                 ),
                 onPressed: () async {
-                  //  final prefs = await SharedPreferences.getInstance();
-
-                  // final userid = prefs.getString('uid') ?? 'test';
                   final selectedCompanies = <Company>[];
                   for (int i = 0; i < isSelected.length; i++) {
                     if (isSelected[i]) {
                       selectedCompanies.add(companies[i]);
                     }
                   }
-                  print("Your data:");
 
-                  for (var company in selectedCompanies) {
-                    print(company.name);
-                  }
                   try {
-                    print("This is the uid: ${uid}");
                     await apiService.addCompaniesToUser(uid, selectedCompanies);
                     final notifID =
                         'notif_${DateTime.now().millisecondsSinceEpoch}';
@@ -300,6 +360,8 @@ void showDataDialog(
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Companies added successfully!')),
                     );
+
+                    refreshCallback(); // Call the callback to refresh the grid
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Failed to add companies: $e')),

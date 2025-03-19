@@ -36,16 +36,25 @@ class ApiService {
   }
 
   // Fetch real-time prediction for a company
-  Future<RealTimePrediction> fetchRealTimePrediction(String symbol) async {
+  Future<RealTimePrediction?> fetchRealTimePrediction(String symbol) async {
     final response =
         await http.get(Uri.parse('$baseUrl/api/model/real-time/$symbol'));
 
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body)['data'];
+       final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
+
+           if (jsonResponse['success'] == true) {
+      final data = jsonResponse['data'] as Map<String, dynamic>;
       return RealTimePrediction.fromJson(data);
     } else {
-      throw Exception('Failed to load real-time prediction');
+      print('API returned success: false for $symbol');
+      return null;
     }
+  } else {
+    print('Failed to fetch data for $symbol: ${response.statusCode}');
+    return null;
+  }
+ 
   }
 
   // Fetch prediction without climate data for a company

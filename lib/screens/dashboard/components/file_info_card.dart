@@ -1,18 +1,23 @@
-import 'package:admin/models/my_files.dart';
 import 'package:admin/models/tickers.dart';
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../constants.dart';
+import 'package:admin/models/predictions.dart';
 
 class StockInfoCard extends StatelessWidget {
   const StockInfoCard({
     Key? key,
     required this.info,
+    this.realTimeData,
+    this.isLoading = false, // Add a loading state
   }) : super(key: key);
 
-  final StockInfo info;
+  final String info;
+  final RealTimePrediction? realTimeData;
+  final bool isLoading; // Indicates if data is loading
 
   @override
   Widget build(BuildContext context) {
@@ -42,51 +47,79 @@ class StockInfoCard extends StatelessWidget {
                   colorFilter: ColorFilter.mode(primaryColor, BlendMode.srcIn),
                 ),
               ),
-        
               Icon(Icons.more_vert, color: Colors.grey),
             ],
           ),
           // Display stock name and symbol
-          Text(
-            info.companyName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge!
-                .copyWith(color: Colors.grey[850]),
-          ),
-          Text(
-            generateTicker(info.companyName),
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall!
-                .copyWith(color: Colors.black54),
-          ),
-          // Display stock price
-
-          //  Theme.of(context)
-          //           .textTheme
-          //           .headlineSmall!
-          //           .copyWith(color: Colors.white),
-
-          Row(
-            children: [
-              Text("\$${info.closingPrice.toStringAsFixed(2)}",
-                  style: TextStyle(fontSize: 16)),
-              // ProgressLine(
-              //   color: info.color,
-              //   percentage: (info.percentageChange! * 100)
-              //       .toInt(), // Convert percentage change
-              // ),
-              SizedBox(width: defaultPadding),
-              Text(
-                "${info.priceChange > 0 ? "+" : ""}${info.priceChange.toStringAsFixed(2)}%",
-                style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                    color: info.priceChange > 0 ? Colors.green : Colors.red),
+          if (isLoading)
+            Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                width: 100,
+                height: 16,
+                color: Colors.white,
               ),
-            ],
-          ),
+            )
+          else
+            Text(
+              info,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge!
+                  .copyWith(color: Colors.grey[850]),
+            ),
+          if (isLoading)
+            Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                width: 50,
+                height: 12,
+                color: Colors.white,
+              ),
+            )
+          else
+            Text(
+              generateTicker(info),
+              style: Theme.of(context)
+                  .textTheme
+                  .labelSmall!
+                  .copyWith(color: Colors.black54),
+            ),
+
+          if (isLoading)
+            Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                width: 80,
+                height: 16,
+                color: Colors.white,
+              ),
+            )
+          else if (realTimeData != null)
+            Row(
+              children: [
+                Text("\$${realTimeData!.predictedClose.toStringAsFixed(2)}",
+                    style: TextStyle(fontSize: 16)),
+                SizedBox(width: defaultPadding),
+                Text(
+                  "${realTimeData!.predictedClose > 0 ? "+" : ""}${realTimeData!.predictedClose.toStringAsFixed(2)}%",
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                      color: realTimeData!.predictedClose > 0
+                          ? Colors.green
+                          : Colors.red),
+                ),
+              ],
+            )
+          else
+            Text(
+              'No data available',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
         ],
       ),
     );
