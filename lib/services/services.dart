@@ -187,7 +187,7 @@ class ApiService {
 
   Future<void> addNotificationToUser(
       String uid, Notifications notification) async {
-    final notifID = 'notif_${DateTime.now().millisecondsSinceEpoch}';
+ 
     try {
       final firestore = FirebaseFirestore.instance;
       await firestore
