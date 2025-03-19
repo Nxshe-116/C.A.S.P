@@ -7,21 +7,18 @@ import 'package:admin/screens/profile/setting_toggle.dart';
 import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatelessWidget {
-
-  final String userName = "Nashe Chagumaira"; // Example user name
-  final String userEmail = "medannashe6@gmail.com"; // Example user email
   final String userProfilePic =
       "assets/images/man.jpg"; // Example profile picture (replace with your own)
 
-
-    final String name;
+  final String name;
   final String lastName;
   final String uid;
 
   const ProfileScreen({
     Key? key,
     required this.name,
-    required this.lastName, required String this.uid,
+    required this.lastName,
+    required String this.uid,
   }) : super(key: key);
 
   @override
@@ -32,7 +29,11 @@ class ProfileScreen extends StatelessWidget {
         padding: EdgeInsets.all(defaultPadding),
         child: Column(
           children: [
-            Header(text: "Profile", name: name, lastName: lastName,),
+            Header(
+              text: "Profile",
+              name: name,
+              lastName: lastName,
+            ),
             SizedBox(height: defaultPadding),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,7 +61,7 @@ class ProfileScreen extends StatelessWidget {
                               // User Name
                               Center(
                                 child: Text(
-                                  userName,
+                                  name,
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
@@ -74,7 +75,7 @@ class ProfileScreen extends StatelessWidget {
                               // User Email
                               Center(
                                 child: Text(
-                                  userEmail,
+                                  name,
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: Colors.grey[600],

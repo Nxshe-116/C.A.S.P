@@ -81,6 +81,9 @@ class _SignInScreenState extends State<SignInScreen> {
           .collection('users')
           .doc(userCredential.user!.uid)
           .get();
+    print('User UID: ${userCredential.user!.uid}');
+    print('User Document Exists: ${userDoc.exists}');
+    print('User Data: ${userDoc.data()}');
 
       // Check if user document exists and has data
       if (!userDoc.exists || userDoc.data() == null) {
@@ -102,13 +105,14 @@ class _SignInScreenState extends State<SignInScreen> {
 
       // Extract user data
       final userData = userDoc.data() as Map<String, dynamic>;
-      final name = userData['name'] ?? '';
+      final name = userData['firstName'] ?? '';
       final lastName = userData['lastName'] ?? '';
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
       await prefs.setString('name', name);
       await prefs.setString('lastName', lastName);
+      await prefs.setString('uid', userCredential.user!.uid);
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(

@@ -1,5 +1,6 @@
 import 'package:admin/models/company.dart';
 import 'package:admin/models/my_files.dart';
+import 'package:admin/models/notifications.dart';
 import 'package:admin/models/tickers.dart';
 import 'package:admin/responsive.dart';
 import 'package:admin/services/services.dart';
@@ -27,6 +28,10 @@ class _MyFilesState extends State<MyFiles> {
   late Future<List<Company>> futureCompanies;
   List<bool> isSelected = []; // To track selected companies
   List<Company> companies = [];
+
+  // final prefs = await SharedPreferences.getInstance();
+
+  //  final uid = prefs.getString('uid');
 
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   @override
@@ -66,14 +71,16 @@ class _MyFilesState extends State<MyFiles> {
                       BorderRadius.circular(6.0), // Slightly rounded corners
                 ),
               ),
-              onPressed: () => showDataDialog(
-                context,
-                futureCompanies,
-                isSelected,
-                updateSelection,
-                apiService,
-                widget.uid, // Pass the uid
-              ),
+              onPressed: () {
+                showDataDialog(
+                  context,
+                  futureCompanies,
+                  isSelected,
+                  updateSelection,
+                  apiService,
+                  widget.uid, // Pass the uid
+                );
+              },
               icon: Icon(
                 Icons.add,
                 color: Colors.white,
@@ -133,11 +140,6 @@ class _FileInfoCardGridViewState extends State<FileInfoCardGridView> {
     );
   }
 }
-
-
-
-
-
 
 void showDataDialog(
   BuildContext context,
@@ -263,15 +265,38 @@ void showDataDialog(
                   ),
                 ),
                 onPressed: () async {
+                  //  final prefs = await SharedPreferences.getInstance();
+
+                  // final userid = prefs.getString('uid') ?? 'test';
                   final selectedCompanies = <Company>[];
                   for (int i = 0; i < isSelected.length; i++) {
                     if (isSelected[i]) {
                       selectedCompanies.add(companies[i]);
                     }
                   }
+                  print("Your data:");
 
+                  for (var company in selectedCompanies) {
+                    print(company.name);
+                  }
                   try {
+                    print("This is the uid: ${uid}");
                     await apiService.addCompaniesToUser(uid, selectedCompanies);
+                    final notifID =
+                        'notif_${DateTime.now().millisecondsSinceEpoch}';
+                    for (var company in selectedCompanies) {
+                      final notification = Notifications(
+                        message:
+                            'Company ${company.name} was added successfully to your portfolio',
+                        timestamp: DateTime.now(),
+                        title: 'Company Added to Your Watchlist',
+                        userId: uid,
+                        notifId: notifID,
+                      );
+
+                      await apiService.addNotificationToUser(uid, notification);
+                    }
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Companies added successfully!')),
                     );
@@ -292,248 +317,3 @@ void showDataDialog(
     },
   );
 }
-
-
-// void showDataDialog(
-//   BuildContext context,
-//   Future<List<Company>> futureCompanies,
-//   List<bool> isSelected,
-//   Function(int index, bool value) updateSelection,
-//   ApiService apiService,
-//   String uid,
-// ) {
-//   List <Company> companies=[];
-//   showDialog(
-//     context: context,
-//     builder: (BuildContext context) {
-//       return AlertDialog(
-//         backgroundColor: Colors.white,
-//         shape: RoundedRectangleBorder(
-//           borderRadius: BorderRadius.circular(12),
-//         ),
-//         contentPadding: EdgeInsets.zero,
-//         content: Container(
-//           height: 600, // Set a fixed height
-//           width: 600, // Set a fixed width
-//           child: Padding(
-//             padding: const EdgeInsets.all(30.0),
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Text(
-//                   'Select Companies',
-//                   style: Theme.of(context).textTheme.headlineLarge,
-//                 ),
-//                 SizedBox(
-//                   height: 400.h,
-//                   child:
-//                   FutureBuilder<List<Company>>(
-//   future: futureCompanies,
-//   builder: (context, snapshot) {
-//     if (snapshot.connectionState == ConnectionState.waiting) {
-//       return Center(child: CircularProgressIndicator());
-//     } else if (snapshot.hasError) {
-//       return Center(child: Text('Error: ${snapshot.error}'));
-//     } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-//       return Center(child: Text('No companies found'));
-//     } else {
-//       WidgetsBinding.instance.addPostFrameCallback((_) {
-//         // Update external `companies` list when data is available
-//         setState(() {
-//           companies = snapshot.data!;
-//           if (isSelected.isEmpty) {
-//             isSelected = List<bool>.filled(companies.length, false);
-//           }
-//         });
-//       });
-
-//       return ListView.builder(
-//         itemCount: companies.length,
-//         itemBuilder: (context, index) {
-//           final company = companies[index];
-//           return CheckboxListTile(
-//             value: isSelected[index],
-//             onChanged: (value) {
-//               setState(() {
-//                 updateSelection(index, value ?? false);
-//               });
-//             },
-//             title: Text(company.name),
-//             subtitle: Text('Symbol: ${generateTicker(company.symbol)}'),
-//           );
-//         },
-//       );
-//     }
-//   },
-// )
-
-                  
-                  
-//                   //  FutureBuilder<List<Company>>(
-//                   //   future: futureCompanies,
-//                   //   builder: (context, snapshot) {
-//                   //     if (snapshot.connectionState == ConnectionState.waiting) {
-//                   //       return Center(child: CircularProgressIndicator());
-//                   //     } else if (snapshot.hasError) {
-//                   //       return Center(child: Text('Error: ${snapshot.error}'));
-//                   //     } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-//                   //       return Center(child: Text('No companies found'));
-//                   //     } else {
-//                   //       final companies = snapshot.data!;
-
-//                   //       if (isSelected.isEmpty) {
-//                   //         isSelected =
-//                   //             List<bool>.filled(companies.length, false);
-//                   //       }
-
-//                   //       return ListView.builder(
-//                   //         itemCount: companies.length,
-//                   //         itemBuilder: (context, index) {
-//                   //           final company = companies[index];
-//                   //           return Container(
-//                   //             width: MediaQuery.of(context).size.width,
-//                   //             child: Row(
-//                   //               children: [
-//                   //                 Checkbox(
-//                   //                   value: isSelected[index],
-//                   //                   onChanged: (value) {
-//                   //                     updateSelection(index,
-//                   //                         value ?? false); // Update the state
-//                   //                   },
-//                   //                 ),
-//                   //                 Expanded(
-//                   //                   child: Padding(
-//                   //                     padding: const EdgeInsets.all(8.0),
-//                   //                     child: Container(
-//                   //                       decoration: BoxDecoration(
-//                   //                         color: const Color(0xFFFEFEFE),
-//                   //                         borderRadius: BorderRadius.all(
-//                   //                             Radius.circular(10)),
-//                   //                       ),
-//                   //                       child: Row(
-//                   //                         children: [
-//                   //                           Container(
-//                   //                             padding: EdgeInsets.all(
-//                   //                                 defaultPadding * 0.75),
-//                   //                             height: 60,
-//                   //                             width: 60,
-//                   //                             decoration: BoxDecoration(
-//                   //                               color: Color(0xFFF4FAFF),
-//                   //                               borderRadius: BorderRadius.all(
-//                   //                                   Radius.circular(10)),
-//                   //                             ),
-//                   //                             child: SvgPicture.asset(
-//                   //                               "assets/icons/sprout.svg",
-//                   //                               colorFilter: ColorFilter.mode(
-//                   //                                   primaryColor,
-//                   //                                   BlendMode.srcIn),
-//                   //                             ),
-//                   //                           ),
-//                   //                           SizedBox(
-//                   //                             width: 5.w,
-//                   //                           ),
-//                   //                           Expanded(
-//                   //                             child: Column(
-//                   //                               crossAxisAlignment:
-//                   //                                   CrossAxisAlignment.start,
-//                   //                               mainAxisAlignment:
-//                   //                                   MainAxisAlignment.center,
-//                   //                               children: [
-//                   //                                 Text(
-//                   //                                   company.name,
-//                   //                                   style: TextStyle(
-//                   //                                       fontSize:
-//                   //                                           16), // Adjust size as needed
-//                   //                                 ),
-//                   //                                 Text(
-//                   //                                   'Symbol: ${generateTicker(company.symbol)}',
-//                   //                                   style: TextStyle(
-//                   //                                       fontSize: 12,
-//                   //                                       color: Colors.grey),
-//                   //                                 ),
-//                   //                               ],
-//                   //                             ),
-//                   //                           ),
-//                   //                         ],
-//                   //                       ),
-//                   //                     ),
-//                   //                   ),
-//                   //                 ),
-//                   //               ],
-//                   //             ),
-//                   //           );
-//                   //         },
-//                   //       );
-//                   //     }
-//                   //   },
-//                   // ),
-            
-            
-            
-            
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ),
-//         actions: [
-//           Row(
-//             mainAxisAlignment: MainAxisAlignment.end,
-//             children: [
-//               TextButton(
-//                 onPressed: () {
-//                   Navigator.of(context).pop(); // Close the dialog
-//                 },
-//                 child: Text(
-//                   'Cancel',
-//                   style: TextStyle(color: Colors.redAccent),
-//                 ),
-//               ),
-//               ElevatedButton.icon(
-//                 style: TextButton.styleFrom(
-//                   backgroundColor: primaryColor,
-//                   padding: EdgeInsets.symmetric(
-//                     horizontal: defaultPadding * 1.5,
-//                     vertical:
-//                         defaultPadding / (Responsive.isMobile(context) ? 2 : 1),
-//                   ),
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius:
-//                         BorderRadius.circular(6.0), // Slightly rounded corners
-//                   ),
-//                 ),
-//                 onPressed: () async {
-//                   final selectedCompanies = <Company>[];
-//                   for (int i = 0; i < isSelected.length; i++) {
-//                     if (isSelected[i]) {
-//                       selectedCompanies.add(companies[i]);
-//                     }
-//                   }
-
-//                   // Call the Firestore update method
-//                   try {
-//                     await apiService.addCompaniesToUser(uid, selectedCompanies);
-//                     ScaffoldMessenger.of(context).showSnackBar(
-//                       SnackBar(content: Text('Companies added successfully!')),
-//                     );
-//                   } catch (e) {
-//                     ScaffoldMessenger.of(context).showSnackBar(
-//                       SnackBar(content: Text('Failed to add companies: $e')),
-//                     );
-//                   }
-
-//                   // Close the dialog
-//                   Navigator.of(context).pop();
-//                 },
-//                 label: Text(
-//                   "Select",
-//                   style: TextStyle(color: Colors.white),
-//                 ),
-//               )
-//             ],
-//           ),
-//         ],
-//       );
-//     },
-//   );
-// }

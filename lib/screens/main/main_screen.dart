@@ -38,11 +38,31 @@ class _MainScreenState extends State<MainScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     pages = [
-      DashboardScreen(name: widget.name, lastName: widget.lastName, uid: widget.uid,),
-      PortfolioScreen(name: widget.name, lastName: widget.lastName, uid: widget.uid,),
-      InsightScreen(name: widget.name, lastName: widget.lastName, uid: widget.uid,),
-      NotifictionScreen(name: widget.name, lastName: widget.lastName, uid: widget.uid,),
-      ProfileScreen(name: widget.name, lastName: widget.lastName, uid: widget.uid,),
+      DashboardScreen(
+        name: widget.name,
+        lastName: widget.lastName,
+        uid: widget.uid,
+      ),
+      PortfolioScreen(
+        name: widget.name,
+        lastName: widget.lastName,
+        uid: widget.uid,
+      ),
+      InsightScreen(
+        name: widget.name,
+        lastName: widget.lastName,
+        uid: widget.uid,
+      ),
+      NotifictionScreen(
+        name: widget.name,
+        lastName: widget.lastName,
+        uid: widget.uid,
+      ),
+      ProfileScreen(
+        name: widget.name,
+        lastName: widget.lastName,
+        uid: widget.uid,
+      ),
     ];
   }
 
@@ -57,7 +77,9 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       key: context.read<MenuAppController>().scaffoldKey,
       drawer: SideMenu(
-          onMenuItemSelected: _onMenuItemSelected), // Pass the callback
+        onMenuItemSelected: _onMenuItemSelected,
+        uid: widget.uid,
+      ),
       body: SafeArea(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,7 +88,10 @@ class _MainScreenState extends State<MainScreen> {
             if (Responsive.isDesktop(context))
               Expanded(
                 // It takes 1/6 part of the screen
-                child: SideMenu(onMenuItemSelected: _onMenuItemSelected),
+                child: SideMenu(
+                  onMenuItemSelected: _onMenuItemSelected,
+                  uid: widget.uid,
+                ),
               ),
             Expanded(
               // It takes 5/6 part of the screen

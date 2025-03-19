@@ -35,8 +35,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         email: email,
         password: password,
       );
-
-      final userId = 'user${DateTime.now().millisecondsSinceEpoch}';
+     final userId = userCredential.user!.uid;
 
       await FirebaseFirestore.instance.collection('users').doc(userId).set({
         'userId': userId,
@@ -63,6 +62,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       await prefs.setBool('isLoggedIn', true);
       await prefs.setString('name', firstName);
       await prefs.setString('lastName', lastName);
+      await prefs.setString('uid', userCredential.user!.uid);
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
