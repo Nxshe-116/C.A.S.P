@@ -1,5 +1,4 @@
 import 'package:admin/models/company.dart';
-import 'package:admin/models/my_files.dart';
 import 'package:admin/models/notifications.dart';
 import 'package:admin/models/predictions.dart';
 import 'package:admin/models/tickers.dart';
@@ -8,7 +7,7 @@ import 'package:admin/screens/dashboard/components/file_info_card.dart';
 import 'package:admin/services/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import 'package:flutter_svg/svg.dart';
 
 import '../../../constants.dart';
@@ -27,7 +26,7 @@ class MyFiles extends StatefulWidget {
 class _MyFilesState extends State<MyFiles> {
   final ApiService apiService = ApiService();
   late Future<List<Company>> futureCompanies;
-  List<bool> isSelected = []; // To track selected companies
+  List<bool> isSelected = [];
   List<Company> companies = [];
 
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -114,13 +113,14 @@ class _MyFilesState extends State<MyFiles> {
 
 class FileInfoCardGridView extends StatefulWidget {
   final String userId;
-  final VoidCallback refreshCallback; // Add this
+  final VoidCallback refreshCallback;
+
   const FileInfoCardGridView({
     Key? key,
-    this.crossAxisCount = 4,
-    this.childAspectRatio = 1,
+    this.crossAxisCount = 4, // Default for desktop
+    this.childAspectRatio = 1, // Default aspect ratio
     required this.userId,
-    required this.refreshCallback, // Add this
+    required this.refreshCallback,
   }) : super(key: key);
 
   final int crossAxisCount;
@@ -186,15 +186,23 @@ class _FileInfoCardGridViewState extends State<FileInfoCardGridView> {
 
   @override
   Widget build(BuildContext context) {
+    // Determine the screen width
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Adjust crossAxisCount and childAspectRatio based on screen size
+    final int crossAxisCount = screenWidth < 600 ? 2 : widget.crossAxisCount;
+    final double childAspectRatio =
+        screenWidth < 600 ? 0.8 : widget.childAspectRatio;
+
     return GridView.builder(
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       itemCount: watchlist.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: widget.crossAxisCount,
+        crossAxisCount: crossAxisCount, // Dynamic crossAxisCount
         crossAxisSpacing: defaultPadding,
         mainAxisSpacing: defaultPadding,
-        childAspectRatio: widget.childAspectRatio,
+        childAspectRatio: childAspectRatio, // Dynamic childAspectRatio
       ),
       itemBuilder: (context, index) {
         final stock = watchlist[index];
@@ -217,7 +225,7 @@ void showDataDialog(
   Function(int index, bool value) updateSelection,
   ApiService apiService,
   String uid,
-  VoidCallback refreshCallback, // Add this
+  VoidCallback refreshCallback,
 ) {
   List<Company> companies = [];
 
@@ -226,6 +234,18 @@ void showDataDialog(
     builder: (BuildContext context) {
       return StatefulBuilder(
         builder: (context, setState) {
+          // Get screen size
+          final screenWidth = MediaQuery.of(context).size.width;
+          final screenHeight = MediaQuery.of(context).size.height;
+
+          // Adjust dialog size for mobile
+          final dialogWidth = Responsive.isMobile(context)
+              ? screenWidth * 0.9  
+              : 600; 
+          final dialogHeight = Responsive.isMobile(context)
+              ? screenHeight * 0.8 // 
+              : 600; // Fixed height for desktop
+
           return AlertDialog(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
@@ -233,19 +253,25 @@ void showDataDialog(
             ),
             contentPadding: EdgeInsets.zero,
             content: Container(
-              height: 600,
-              width: 600,
+              height: dialogHeight.toDouble(), // Convert num to double
+              width: dialogWidth.toDouble(), // Convert num to double
               child: Padding(
-                padding: const EdgeInsets.all(30.0),
+                padding:
+                    EdgeInsets.all(Responsive.isMobile(context) ? 16.0 : 30.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Select Companies',
-                      style: Theme.of(context).textTheme.headlineLarge,
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineLarge
+                          ?.copyWith(
+                            fontSize: Responsive.isMobile(context) ? 20 : 24,
+                          ),
                     ),
-                    SizedBox(
-                      height: 400,
+                    SizedBox(height: 16),
+                    Expanded(
                       child: FutureBuilder<List<Company>>(
                         future: futureCompanies,
                         builder: (context, snapshot) {
@@ -272,10 +298,16 @@ void showDataDialog(
                                 return Row(
                                   children: [
                                     Container(
-                                      padding:
-                                          EdgeInsets.all(defaultPadding * 0.75),
-                                      height: 36.h,
-                                      width: 10.w,
+                                      padding: EdgeInsets.all(
+                                          Responsive.isMobile(context)
+                                              ? 8.0
+                                              : defaultPadding * 0.75),
+                                      height: Responsive.isMobile(context)
+                                          ? 30
+                                          : 36,
+                                      width: Responsive.isMobile(context)
+                                          ? 30
+                                          : 36,
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFFEFEFE),
                                         borderRadius: const BorderRadius.all(
@@ -287,6 +319,7 @@ void showDataDialog(
                                             primaryColor, BlendMode.srcIn),
                                       ),
                                     ),
+                                    SizedBox(width: 8),
                                     Expanded(
                                       child: CheckboxListTile(
                                         value: isSelected[index],
@@ -295,9 +328,24 @@ void showDataDialog(
                                             isSelected[index] = value ?? false;
                                           });
                                         },
-                                        title: Text(company.name),
+                                        title: Text(
+                                          company.name,
+                                          style: TextStyle(
+                                            fontSize:
+                                                Responsive.isMobile(context)
+                                                    ? 14
+                                                    : 16,
+                                          ),
+                                        ),
                                         subtitle: Text(
-                                            'Symbol: ${generateTicker(company.symbol)}'),
+                                          'Symbol: ${generateTicker(company.symbol)}',
+                                          style: TextStyle(
+                                            fontSize:
+                                                Responsive.isMobile(context)
+                                                    ? 12
+                                                    : 14,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -317,16 +365,24 @@ void showDataDialog(
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-                child:
-                    Text('Cancel', style: TextStyle(color: Colors.redAccent)),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontSize: Responsive.isMobile(context) ? 14 : 16,
+                  ),
+                ),
               ),
               ElevatedButton.icon(
                 style: TextButton.styleFrom(
                   backgroundColor: primaryColor,
                   padding: EdgeInsets.symmetric(
-                    horizontal: defaultPadding * 1.5,
-                    vertical:
-                        defaultPadding / (Responsive.isMobile(context) ? 2 : 1),
+                    horizontal: Responsive.isMobile(context)
+                        ? defaultPadding
+                        : defaultPadding * 1.5,
+                    vertical: Responsive.isMobile(context)
+                        ? defaultPadding / 2
+                        : defaultPadding,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(6.0),
@@ -370,8 +426,14 @@ void showDataDialog(
 
                   Navigator.of(context).pop();
                 },
-                label: Text("Select", style: TextStyle(color: Colors.white)),
-              )
+                label: Text(
+                  "Select",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: Responsive.isMobile(context) ? 14 : 16,
+                  ),
+                ),
+              ),
             ],
           );
         },

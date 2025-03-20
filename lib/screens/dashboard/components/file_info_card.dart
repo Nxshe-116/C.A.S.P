@@ -1,4 +1,5 @@
 import 'package:admin/models/tickers.dart';
+import 'package:admin/responsive.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -36,8 +37,12 @@ class StockInfoCard extends StatelessWidget {
             children: [
               Container(
                 padding: EdgeInsets.all(defaultPadding * 0.75),
-                height: 36.h,
-                width: 10.w,
+                height: Responsive.isMobile(context)
+                    ? 36.h
+                    : 36.h, // Adjust height for mobile
+                width: Responsive.isMobile(context)
+                    ? 26.w
+                    : 10.w, // Adjust width for mobile
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEFEFE),
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
@@ -45,6 +50,7 @@ class StockInfoCard extends StatelessWidget {
                 child: SvgPicture.asset(
                   "assets/icons/sprout.svg",
                   colorFilter: ColorFilter.mode(primaryColor, BlendMode.srcIn),
+                  fit: BoxFit.fill, // Ensure the SVG fits inside the container
                 ),
               ),
               Icon(Icons.more_vert, color: Colors.grey),

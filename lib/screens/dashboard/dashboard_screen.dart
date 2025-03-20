@@ -43,7 +43,8 @@ class DashboardScreen extends StatelessWidget {
                     children: [
                       MyFiles(uid:uid),
                       SizedBox(height: defaultPadding),
-                      RecentFiles(),
+                     
+                      RecentFiles(userId: uid),
                       if (Responsive.isMobile(context))
                         SizedBox(height: defaultPadding),
                       if (Responsive.isMobile(context))
