@@ -134,7 +134,7 @@ class _RecentFilesState extends State<RecentFiles> {
               } else if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return Center(child: Text('No prediction data available'));
+                return Center(child: Text('No watchlist'));
               } else {
                 final predictions = snapshot.data!;
                 return SizedBox(
@@ -328,22 +328,93 @@ class StockListTile extends StatelessWidget {
   }
 }
 
-class ChartWidget extends StatelessWidget {
+class ChartWidget extends StatefulWidget {
   final String? stock;
 
   const ChartWidget({Key? key, this.stock}) : super(key: key);
 
   @override
+  State<ChartWidget> createState() => _ChartWidgetState();
+}
+
+class _ChartWidgetState extends State<ChartWidget> {
+  ApiService apiService = ApiService();
+  Prediction? predictionWithoutClimate;
+  PredictionWithClimate? predictionWithClimate;
+  bool isLoading = false;
+  String? errorMessage;
+
+  @override
+  void didUpdateWidget(ChartWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.stock != oldWidget.stock && widget.stock != null) {
+      _fetchData(widget.stock!);
+    }
+  }
+
+  Future<void> _fetchData(String symbol) async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      // Fetch data from both endpoints
+      final predictionWithoutClimateData =
+          await apiService.fetchPredictionWithoutClimate(symbol);
+      final predictionWithClimateData =
+          await apiService.fetchPredictionWithClimate(symbol);
+
+      setState(() {
+        predictionWithoutClimate = predictionWithoutClimateData;
+        predictionWithClimate = predictionWithClimateData;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
-      height: 200,
-      child: Center(
-        child: Text(
-          stock != null ? 'Chart for $stock' : 'No stock selected',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
+        height: 200,
+        child: Center(
+          child: widget.stock == null
+              ? Text(
+                  'No stock selected',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                )
+              : isLoading
+                  ? CircularProgressIndicator() // Show loading indicator
+                  : errorMessage != null
+                      ? Text(
+                          'Error: $errorMessage',
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (predictionWithoutClimate != null)
+                              Text(
+                                'Without Climate: ${predictionWithoutClimate?.predictedClose.toString()}',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            SizedBox(height: 10),
+                            if (predictionWithClimate != null)
+                              Text(
+                                'With Climate: ${predictionWithClimate?.predictedClose.toString()}',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                          ],
+                        ),
+        ));
   }
 }
 

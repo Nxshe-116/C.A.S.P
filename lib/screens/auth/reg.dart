@@ -2,7 +2,6 @@ import 'package:admin/constants.dart';
 import 'package:admin/responsive.dart';
 import 'package:admin/screens/auth/components/components.dart';
 import 'package:admin/screens/main/main_screen.dart';
-// import 'package:admin/screens/auth/sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -21,86 +20,84 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final formKey = GlobalKey<FormState>();
 
   Future<void> _register() async {
-    // if (formKey.currentState!.validate()) {
-    try {
-      final firstName = firstNameController.text.trim();
-      final lastName = lastNameController.text.trim();
-      final email = emailController.text.trim();
-      final password = passwordController.text.trim();
+    if (formKey.currentState!.validate()) {
+      try {
+        final firstName = firstNameController.text.trim();
+        final lastName = lastNameController.text.trim();
+        final email = emailController.text.trim();
+        final password = passwordController.text.trim();
 
-      //  print('Details: $firstName,$lastName,$email,$password');
+        final userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+        final userId = userCredential.user!.uid;
 
-      final userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-     final userId = userCredential.user!.uid;
+        await FirebaseFirestore.instance.collection('users').doc(userId).set({
+          'userId': userId,
+          'firstName': firstName,
+          'lastName': lastName,
+          'email': email,
+          'selectedCompanies': [], // Initialize with an empty list
+        });
 
-      await FirebaseFirestore.instance.collection('users').doc(userId).set({
-        'userId': userId,
-        'firstName': firstName,
-        'lastName': lastName,
-        'email': email,
-        'selectedCompanies': [], // Initialize with an empty list
-      });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            'Successfully registered',
+            style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.white,
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ));
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-          'Successfully registered',
-          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white, // Change background color
-        duration: Duration(seconds: 3), // Set duration
-        behavior: SnackBarBehavior.floating, // Make it floating
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10), // Add rounded corners
-        ),
-      ));
-      // Save login state in SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', true);
-      await prefs.setString('name', firstName);
-      await prefs.setString('lastName', lastName);
-      await prefs.setString('uid', userCredential.user!.uid);
+        // Save login state in SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+        await prefs.setString('name', firstName);
+        await prefs.setString('lastName', lastName);
+        await prefs.setString('uid', userCredential.user!.uid);
 
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-            builder: (context) => MainScreen(
-                  uid: userCredential.user!.uid,
-                  name: firstName,
-                  lastName: lastName,
-                )),
-        (Route<dynamic> route) => false,
-      );
-    } on FirebaseAuthException catch (e) {
-      // Handle errors
-      String errorMessage;
-      switch (e.code) {
-        case 'email-already-in-use':
-          errorMessage = 'This email is already registered.';
-          break;
-        case 'weak-password':
-          errorMessage = 'The password is too weak.';
-          break;
-        default:
-          errorMessage = 'An error occurred. Please try again.';
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+              builder: (context) => MainScreen(
+                    uid: userCredential.user!.uid,
+                    name: firstName,
+                    lastName: lastName,
+                  )),
+          (Route<dynamic> route) => false,
+        );
+      } on FirebaseAuthException catch (e) {
+        String errorMessage;
+        switch (e.code) {
+          case 'email-already-in-use':
+            errorMessage = 'This email is already registered.';
+            break;
+          case 'weak-password':
+            errorMessage = 'The password is too weak.';
+            break;
+          default:
+            errorMessage = 'An error occurred. Please try again.';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            errorMessage,
+            style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.white,
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ));
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-          errorMessage,
-          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white, // Change background color
-        duration: Duration(seconds: 3), // Set duration
-        behavior: SnackBarBehavior.floating, // Make it floating
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10), // Add rounded corners
-        ),
-      ));
     }
-    // }
   }
 
   @override
@@ -108,110 +105,122 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     return Scaffold(
       backgroundColor: Color(0xFFF4FAFF),
       body: SafeArea(
-        child: Stack(children: [
-          Image.asset(
-            "assets/images/agric.jpg",
-            fit: BoxFit.fill,
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 4,
-                child: Center(
-                    child: Text(
+        child: Responsive(
+          mobile: _buildMobileLayout(context),
+          desktop: _buildDesktopLayout(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(BuildContext context) {
+    return Stack(
+      children: [
+        Image.asset(
+          "assets/images/agric.jpg",
+          fit: BoxFit.fill,
+          width: double.infinity,
+          height: double.infinity,
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 4,
+              child: Center(
+                child: Text(
                   'AI-Powered Insights \n for Agricultural Markets.',
                   style: TextStyle(
                       fontSize: 55,
                       fontWeight: FontWeight.bold,
                       color: bgColor),
-                )),
+                ),
               ),
-              if (Responsive.isDesktop(context))
-                Expanded(
-                    flex: 2,
-                    child: Container(
-                      color: Color(0xFFF4FAFF),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Image.asset(
-                              "assets/images/12.png",
-                              height: 190,
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text("Welcome",
-                                    style: TextStyle(
-                                        color: secondaryColor,
-                                        fontSize: 35,
-                                        fontWeight: FontWeight.w900)),
-                                Text("Enter your credentials to continue ",
-                                    style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.normal)),
-                              ],
-                            ),
-                            SizedBox(height: 25),
-                            CustomTextField(
-                                controller: firstNameController,
-                                hintText: "First name",
-                                leadingIcon: Icons.person),
-                            CustomTextField(
-                                controller: lastNameController,
-                                hintText: "Last name",
-                                leadingIcon: Icons.person),
-                            CustomTextField(
-                                controller: emailController,
-                                hintText: "Email",
-                                leadingIcon: Icons.mail_outline_outlined),
-                            SizedBox(height: 15),
-                            CustomPasswordField(
-                                controller: passwordController,
-                                hintText: "Password",
-                                leadingIcon: Icons.lock),
-                            CustomButton(
-                              title: "Register",
-                              onTap: _register,
-                            ),
-                          ],
-                        ),
-                      ),
-                    )),
-            ],
+            ),
+            Expanded(
+              flex: 2,
+              child: Container(
+                color: Color(0xFFF4FAFF),
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: _buildRegistrationForm(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Image.asset(
+            "assets/images/agric.jpg",
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: 200,
           ),
-        ]),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: _buildRegistrationForm(),
+          ),
+        ],
       ),
     );
   }
 
-  Future<void> registerUser(
-      String email, String password, String name, String lastName) async {
-    try {
-      // Create user with Firebase Authentication
-      final userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      // Store additional user data in Firestore
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .set({
-        'name': name,
-        'lastName': lastName,
-        'email': email,
-        'uid': userCredential.user!.uid,
-      });
-    } catch (e) {
-      print('Error during registration: $e');
-      rethrow;
-    }
+  Widget _buildRegistrationForm() {
+    return Form(
+      key: formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Image.asset(
+            "assets/images/12.png",
+            height: 100,
+          ),
+          SizedBox(height: 20),
+          Text(
+            "Welcome",
+            style: TextStyle(
+                color: secondaryColor,
+                fontSize: 35,
+                fontWeight: FontWeight.w900),
+          ),
+          Text(
+            "Enter your credentials to continue",
+            style: TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.normal),
+          ),
+          SizedBox(height: 25),
+          CustomTextField(
+              controller: firstNameController,
+              hintText: "First name",
+              leadingIcon: Icons.person),
+          CustomTextField(
+              controller: lastNameController,
+              hintText: "Last name",
+              leadingIcon: Icons.person),
+          CustomTextField(
+              controller: emailController,
+              hintText: "Email",
+              leadingIcon: Icons.mail_outline_outlined),
+          SizedBox(height: 15),
+          CustomPasswordField(
+              controller: passwordController,
+              hintText: "Password",
+              leadingIcon: Icons.lock),
+          CustomButton(
+            title: "Register",
+            onTap: _register,
+          ),
+        ],
+      ),
+    );
   }
 }

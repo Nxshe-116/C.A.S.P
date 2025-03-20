@@ -41,8 +41,8 @@ class StockInfoCard extends StatelessWidget {
                     ? 36.h
                     : 36.h, // Adjust height for mobile
                 width: Responsive.isMobile(context)
-                    ? 26.w
-                    : 10.w, // Adjust width for mobile
+                    ? 42.w
+                    : 1.w, // Adjust width for mobile
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEFEFE),
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
