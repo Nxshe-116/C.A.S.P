@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:admin/models/climate.dart';
 import 'package:admin/models/company.dart';
@@ -10,72 +11,158 @@ import 'package:http/http.dart' as http;
 class ApiService {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   static const String baseUrl = 'https://casp-z2u5.onrender.com';
+  static const Duration timeoutDuration = Duration(seconds: 15);
 
-  // Existing company methods...
   Future<List<Company>> fetchCompanies() async {
-    final response = await http.get(Uri.parse('$baseUrl/api/companies/'));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body)['data'];
-      return data.map((json) => Company.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load companies');
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/companies/'))
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true) {
+          final List<dynamic> data = jsonResponse['data'];
+          return data.map((json) => Company.fromJson(json)).toList();
+        }
+        throw Exception('API returned success: false');
+      }
+      throw Exception('Failed to load companies: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Error fetching companies: $e');
+      rethrow;
     }
   }
 
   Future<Company> fetchCompanyDetails(String symbol) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/api/companies/$symbol'));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body)['data'];
-      return Company.fromJson(data);
-    } else {
-      throw Exception('Failed to load company details');
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/companies/$symbol'))
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true) {
+          return Company.fromJson(jsonResponse['data']);
+        }
+        throw Exception('API returned success: false');
+      }
+      throw Exception('Failed to load company details: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Error fetching company details: $e');
+      rethrow;
     }
   }
 
   // PREDICTION ENDPOINTS
   Future<RealTimePrediction?> fetchRealTimePrediction(String symbol) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/api/model/real-time/$symbol'));
-    if (response.statusCode == 200) {
-      final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
-      if (jsonResponse['success'] == true) {
-        return RealTimePrediction.fromJson(jsonResponse['data']);
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/model/real-time/$symbol'))
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true) {
+          return RealTimePrediction.fromJson(jsonResponse['data']);
+        }
       }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching real-time prediction: $e');
+      return null;
     }
-    return null;
   }
 
   Future<RealTimePrediction?> fetchRealTimeWithClimate(String symbol) async {
-    final response = await http
-        .get(Uri.parse('$baseUrl/api/model/real-time-with-climate/$symbol'));
-    if (response.statusCode == 200) {
-      final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
-      if (jsonResponse['success'] == true) {
-        return RealTimePrediction.fromJson(jsonResponse['data']);
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/model/real-time-with-climate/$symbol'),
+          )
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true) {
+          return RealTimePrediction.fromJson(jsonResponse['data']);
+        }
       }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching real-time with climate: $e');
+      return null;
     }
-    return null;
   }
 
   Future<AgriculturalPrediction> fetchAgriculturalPrediction(
       String symbol) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/api/model/agri-prediction/$symbol'));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body)['data'];
-      return AgriculturalPrediction.fromJson(data);
-    } else {
-      throw Exception('Failed to load agricultural prediction');
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/model/agri-prediction/$symbol'),
+          )
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
+          return AgriculturalPrediction.fromJson(jsonResponse['data']);
+        }
+        throw Exception(jsonResponse['error'] ?? 'API returned invalid data');
+      }
+      throw Exception('Failed to load prediction: ${response.statusCode}');
+    } on http.ClientException catch (e) {
+      debugPrint('Network error: $e');
+      return _createErrorPrediction(symbol, 'Network error: $e');
+    } on TimeoutException catch (e) {
+      debugPrint('Request timeout: $e');
+      return _createErrorPrediction(symbol, 'Request timed out');
+    } on FormatException catch (e) {
+      debugPrint('JSON format error: $e');
+      return _createErrorPrediction(symbol, 'Invalid data format');
+    } catch (e) {
+      debugPrint('Unexpected error: $e');
+      return _createErrorPrediction(symbol, 'Unexpected error: $e');
     }
+  }
+
+  AgriculturalPrediction _createErrorPrediction(String symbol, String error) {
+    return AgriculturalPrediction(
+      symbol: symbol,
+      currentPrediction: 0.0,
+      basePrice: 0.0,
+      climateAdjustment: '0%',
+      climateReport: ClimateReport(
+        impactStatement: 'Error loading prediction',
+        detailedAnalysis: error,
+        recommendations: ['Please try again later'],
+      ),
+      stressFactors: ClimateStressFactors(
+        temperature: ClimateFactor(
+          value: 'N/A',
+          stressScore: 0.0,
+          optimalRange: [],
+        ),
+        rainfall: ClimateFactor(
+          value: 'N/A',
+          stressScore: 0.0,
+          optimalRange: [],
+        ),
+      ),
+      timestamp: DateTime.now(),
+      recommendations: ['Check your connection'],
+    );
   }
 
   Future<PredictionWithClimate?> fetchPredictionWithClimate(
       String symbol) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/model/with-climate/$symbol'),
-      );
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/model/with-climate/$symbol'),
+          )
+          .timeout(timeoutDuration);
 
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
@@ -92,9 +179,11 @@ class ApiService {
 
   Future<Prediction?> fetchPredictionWithoutClimate(String symbol) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/model/without-climate/$symbol'),
-      );
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/model/without-climate/$symbol'),
+          )
+          .timeout(timeoutDuration);
 
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
@@ -111,60 +200,114 @@ class ApiService {
 
   Future<List<HistoricalPrediction>> fetchHistoricalPredictions(
       String symbol) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/api/model/history/$symbol'));
-    if (response.statusCode == 200) {
-      final List<dynamic> data =
-          json.decode(response.body)['data']['historical_predictions'];
-      return data.map((json) => HistoricalPrediction.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load historical predictions');
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/model/history/$symbol'),
+          )
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true) {
+          final List<dynamic> data =
+              jsonResponse['data']['historical_predictions'];
+          return data
+              .map((json) => HistoricalPrediction.fromJson(json))
+              .toList();
+        }
+        throw Exception('API returned success: false');
+      }
+      throw Exception('Failed to load history: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Error fetching historical predictions: $e');
+      rethrow;
     }
   }
 
   Future<List<WeeklyPrediction>> fetchWeeklyPredictions(String symbol) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/api/model/with-climate/$symbol'));
-    if (response.statusCode == 200) {
-      final List<dynamic> data =
-          json.decode(response.body)['data']['weekly_predictions'];
-      return data.map((json) => WeeklyPrediction.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load weekly predictions');
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/model/with-climate/$symbol'),
+          )
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true) {
+          final List<dynamic> data = jsonResponse['data']['weekly_predictions'];
+          return data.map((json) => WeeklyPrediction.fromJson(json)).toList();
+        }
+        throw Exception('API returned success: false');
+      }
+      throw Exception(
+          'Failed to load weekly predictions: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Error fetching weekly predictions: $e');
+      rethrow;
     }
   }
 
   // CLIMATE ENDPOINTS
   Future<ClimateData> fetchClimateData(int year, String month) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/api/model/climate/$year/$month'));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body)['data'];
-      return ClimateData.fromJson(data);
-    } else {
-      throw Exception('Failed to load climate data');
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/model/climate/$year/$month'),
+          )
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true) {
+          return ClimateData.fromJson(jsonResponse['data']);
+        }
+        throw Exception('API returned success: false');
+      }
+      throw Exception('Failed to load climate data: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Error fetching climate data: $e');
+      rethrow;
     }
   }
 
   Future<ClimateMetrics> fetchClimateMetrics(String symbol) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/api/model/with-climate/$symbol'));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data =
-          json.decode(response.body)['data']['climate_metrics'];
-      return ClimateMetrics.fromJson(data);
-    } else {
-      throw Exception('Failed to load climate metrics');
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/model/with-climate/$symbol'),
+          )
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true) {
+          return ClimateMetrics.fromJson(
+              jsonResponse['data']['climate_metrics']);
+        }
+        throw Exception('API returned success: false');
+      }
+      throw Exception('Failed to load climate metrics: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Error fetching climate metrics: $e');
+      rethrow;
     }
   }
 
   // FIREBASE METHODS
   Future<bool> doesCompanyExistInDatabase(String companyName) async {
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('companies')
-        .where('name', isEqualTo: companyName)
-        .get();
-    return querySnapshot.docs.isNotEmpty;
+    try {
+      final querySnapshot = await firestore
+          .collection('companies')
+          .where('name', isEqualTo: companyName)
+          .get()
+          .timeout(timeoutDuration);
+      return querySnapshot.docs.isNotEmpty;
+    } catch (e) {
+      debugPrint('Error checking company existence: $e');
+      rethrow;
+    }
   }
 
   String generateCompanyId(String companyName) {
@@ -177,7 +320,11 @@ class ApiService {
 
   Future<void> addCompaniesToUser(String uid, List<Company> companies) async {
     try {
-      final userDoc = await firestore.collection('users').doc(uid).get();
+      final userDoc = await firestore
+          .collection('users')
+          .doc(uid)
+          .get()
+          .timeout(timeoutDuration);
       final userData = userDoc.data();
       final List<dynamic> selectedCompanies =
           userData?['selectedCompanies'] ?? [];
@@ -198,11 +345,11 @@ class ApiService {
           await firestore.collection('users').doc(uid).update({
             'selectedCompanies': FieldValue.arrayUnion([company.toJson()]),
           });
-          selectedCompanies.add(company.toJson());
         }
       }
     } catch (e) {
-      throw Exception('Failed to add companies to user: $e');
+      debugPrint('Error adding companies to user: $e');
+      rethrow;
     }
   }
 
@@ -212,9 +359,11 @@ class ApiService {
       await firestore
           .collection('notifications')
           .doc(notification.notifId)
-          .set(notification.toMap());
+          .set(notification.toMap())
+          .timeout(timeoutDuration);
     } catch (e) {
-      throw Exception('Failed to add notification: $e');
+      debugPrint('Error adding notification: $e');
+      rethrow;
     }
   }
 }

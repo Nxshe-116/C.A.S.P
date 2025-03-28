@@ -48,7 +48,7 @@ class _SideMenuState extends State<SideMenu> {
                 .onMenuItemSelected(0), // Trigger page switch to Dashboard
           ),
           DrawerListTile(
-            title: "Portfolio",
+            title: "History",
             svgSrc: "assets/icons/menu_tran.svg",
             press: () => widget
                 .onMenuItemSelected(1), // Trigger page switch to Transaction

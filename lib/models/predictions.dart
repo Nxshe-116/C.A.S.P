@@ -60,38 +60,6 @@ class FuturePrediction {
   }
 }
 
-class AgriculturalPrediction {
-  final String symbol;
-  final double currentPrediction;
-  final double basePrice;
-  final String climateAdjustment;
-  final Map<String, dynamic> climateReport;
-  final Map<String, dynamic> stressFactors;
-  final String timestamp;
-
-  AgriculturalPrediction({
-    required this.symbol,
-    required this.currentPrediction,
-    required this.basePrice,
-    required this.climateAdjustment,
-    required this.climateReport,
-    required this.stressFactors,
-    required this.timestamp,
-  });
-
-  factory AgriculturalPrediction.fromJson(Map<String, dynamic> json) {
-    return AgriculturalPrediction(
-      symbol: json['symbol'],
-      currentPrediction: (json['current_prediction'] as num).toDouble(),
-      basePrice: (json['base_price'] as num).toDouble(),
-      climateAdjustment: json['climate_adjustment'],
-      climateReport: json['climate_report'],
-      stressFactors: json['stress_factors'],
-      timestamp: json['timestamp'],
-    );
-  }
-}
-
 class Prediction {
   final String symbol;
   final double currentPrediction;
@@ -200,6 +168,153 @@ class ClimateMetrics {
       growingSeason: json['growing_season'],
       rainfallAnomalyMm: (json['rainfall_anomaly_mm'] as num).toDouble(),
       stressScore: (json['stress_score'] as num).toDouble(),
+    );
+  }
+}
+
+class AgriculturalPrediction {
+  final String symbol;
+  final double currentPrediction;
+  final double basePrice;
+  final String climateAdjustment;
+  final ClimateReport climateReport;
+  final ClimateStressFactors stressFactors;
+  final DateTime timestamp;
+
+  AgriculturalPrediction({
+    required this.symbol,
+    required this.currentPrediction,
+    required this.basePrice,
+    required this.climateAdjustment,
+    required this.climateReport,
+    required this.stressFactors,
+    required this.timestamp,
+    required List<String> recommendations,
+  });
+
+  factory AgriculturalPrediction.fromJson(Map<String, dynamic> json) {
+    try {
+      return AgriculturalPrediction(
+        symbol: json['symbol'] as String? ?? 'N/A',
+        currentPrediction:
+            (json['current_prediction'] as num?)?.toDouble() ?? 0.0,
+        basePrice: (json['base_price'] as num?)?.toDouble() ?? 0.0,
+        climateAdjustment: json['climate_adjustment'] as String? ?? '0%',
+        climateReport: ClimateReport.fromJson(
+          json['climate_report'] as Map<String, dynamic>? ?? {},
+        ),
+        stressFactors: ClimateStressFactors.fromJson(
+          json['stress_factors'] as Map<String, dynamic>? ?? {},
+        ),
+        timestamp: DateTime.parse(
+            json['timestamp'] as String? ?? DateTime.now().toIso8601String()),
+        recommendations: [],
+      );
+    } catch (e, stackTrace) {
+      print('Error parsing AgriculturalPrediction: $e');
+      print(stackTrace);
+      return AgriculturalPrediction(
+        symbol: 'ERROR',
+        currentPrediction: 0.0,
+        basePrice: 0.0,
+        climateAdjustment: '0%',
+        climateReport: ClimateReport(
+          impactStatement: 'Error loading climate report',
+          detailedAnalysis: 'Failed to parse prediction data',
+          recommendations: ['Check API connection'],
+        ),
+        stressFactors: ClimateStressFactors(
+          temperature: ClimateFactor(
+            value: 'N/A',
+            stressScore: 0.0,
+            optimalRange: [],
+          ),
+          rainfall: ClimateFactor(
+            value: 'N/A',
+            stressScore: 0.0,
+            optimalRange: [],
+          ),
+        ),
+        timestamp: DateTime.now(),
+        recommendations: [],
+      );
+    }
+  }
+}
+
+class ClimateStressFactors {
+  final ClimateFactor temperature;
+  final ClimateFactor rainfall;
+
+  ClimateStressFactors({
+    required this.temperature,
+    required this.rainfall,
+  });
+
+  factory ClimateStressFactors.fromJson(Map<String, dynamic> json) {
+    return ClimateStressFactors(
+      temperature: ClimateFactor.fromJson(
+        json['temperature'] as Map<String, dynamic>? ?? {},
+      ),
+      rainfall: ClimateFactor.fromJson(
+        json['rainfall'] as Map<String, dynamic>? ?? {},
+      ),
+    );
+  }
+}
+
+class ClimateFactor {
+  final dynamic value;
+  final double stressScore;
+  final List<dynamic> optimalRange;
+  final dynamic criticalThreshold;
+
+  ClimateFactor({
+    required this.value,
+    required this.stressScore,
+    required this.optimalRange,
+    this.criticalThreshold,
+  });
+
+  factory ClimateFactor.fromJson(Map<String, dynamic> json) {
+    return ClimateFactor(
+      value: json['value'] ?? 'N/A',
+      stressScore: (json['stress_score'] as num?)?.toDouble() ?? 0.0,
+      optimalRange: json['optimal_range'] is List
+          ? json['optimal_range'] as List<dynamic>
+          : [],
+      criticalThreshold: json['critical_threshold'],
+    );
+  }
+}
+
+class ClimateReport {
+  final String impactStatement;
+  final String detailedAnalysis;
+  final List<String> recommendations;
+
+  ClimateReport({
+    required this.impactStatement,
+    required this.detailedAnalysis,
+    required this.recommendations,
+  });
+
+  factory ClimateReport.fromJson(Map<String, dynamic> json) {
+    // Filter out null values from recommendations
+    final rawRecommendations = json['recommendations'] as List<dynamic>? ?? [];
+    final validRecommendations = rawRecommendations
+        .where((item) => item != null)
+        .map((item) => item.toString())
+        .toList();
+
+    return ClimateReport(
+      impactStatement:
+          json['impact_statement'] as String? ?? 'No impact statement',
+      detailedAnalysis:
+          json['detailed_analysis'] as String? ?? 'No detailed analysis',
+      recommendations: validRecommendations.isNotEmpty
+          ? validRecommendations
+          : ['No recommendations provided'],
     );
   }
 }

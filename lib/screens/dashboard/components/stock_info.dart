@@ -1,9 +1,12 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:admin/models/predictions.dart';
+import 'package:admin/screens/dashboard/components/date_formatter.dart';
 import 'package:admin/services/services.dart';
+import 'package:card_swiper/card_swiper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../constants.dart';
 
@@ -62,21 +65,37 @@ class _StockInfoCardState extends State<StockInfoCard> {
   }
 
   Future<void> fetchCompanyPrediction(String symbol) async {
+    if (!mounted) return;
+
     setState(() {
       isLoading = true;
       selectedCompany = symbol;
+      currentPrediction = null; // Clear previous prediction
     });
 
     try {
-      final prediction = await apiService.fetchAgriculturalPrediction(symbol);
-      if (mounted) {
-        setState(() => currentPrediction = prediction);
-      }
-    } catch (e) {
-      print('Error fetching prediction: $e');
-      if (mounted) {
-        setState(() => currentPrediction = null);
-      }
+      final response = await apiService.fetchAgriculturalPrediction(symbol);
+      if (!mounted) return;
+
+      setState(() {
+        currentPrediction = response;
+      });
+    } catch (e, stackTrace) {
+      print('Error fetching prediction for $symbol: $e');
+      print(stackTrace);
+      if (!mounted) return;
+
+      setState(() {
+        currentPrediction = null;
+      });
+
+      // Show error to user if the widget is still mounted
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load prediction for $symbol'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -126,73 +145,241 @@ Widget buildPredictionDetails(
   AgriculturalPrediction prediction,
   BuildContext context,
 ) {
-  final tempFactors = prediction.stressFactors['temperature'];
-  final rainFactors = prediction.stressFactors['rainfall'];
+  // Show error state if prediction indicates an error
+  final isErrorState = prediction.symbol == 'ERROR';
+
+  final pages = [
+    // Price Information Card
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+            minWidth: 90.w, maxWidth: 100.w, minHeight: 300, maxHeight: 300),
+        child: buildInfoCard(
+          context: context,
+          title: isErrorState ? 'Error' : 'Price Analysis',
+          children: [
+            buildInfoRow('Symbol', prediction.symbol),
+            if (isErrorState)
+              Text(
+                'Error loading prediction data',
+                style: TextStyle(color: Colors.red),
+              )
+            else ...[
+              buildInfoRow(
+                'Current Prediction',
+                'ZiG ${prediction.currentPrediction.toStringAsFixed(2)}',
+                valueStyle: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+              buildInfoRow(
+                'Base Price',
+                'ZiG ${prediction.basePrice.toStringAsFixed(2)}',
+              ),
+              buildInfoRow(
+                'Climate Adjustment',
+                prediction.climateAdjustment,
+                valueStyle: TextStyle(
+                  color: prediction.climateAdjustment.startsWith('-')
+                      ? Colors.red
+                      : Colors.green,
+                ),
+              ),
+              buildInfoRow(
+                'Last Updated',
+                TimeUtils.timeAgo(prediction.timestamp),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+
+    // Only show other cards if not in error state
+    if (!isErrorState) ...[
+      // Climate Stress Factors Card
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: 280, maxWidth: 300),
+          child: buildInfoCard(
+            context: context,
+            title: 'Climate Stress Factors',
+            children: [
+              _buildClimateFactorSection(
+                context,
+                title: 'Temperature',
+                value:
+                    '${prediction.stressFactors.temperature.value?.toStringAsFixed(2) ?? 'N/A'}°C',
+                score: prediction.stressFactors.temperature.stressScore,
+                range: prediction.stressFactors.temperature.optimalRange,
+              ),
+              Divider(height: 20, thickness: 1),
+              _buildClimateFactorSection(
+                context,
+                title: 'Rainfall',
+                value:
+                    '${prediction.stressFactors.rainfall.value?.toStringAsFixed(2) ?? 'N/A'}mm',
+                score: prediction.stressFactors.rainfall.stressScore,
+                threshold: prediction.stressFactors.rainfall.criticalThreshold,
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      // Climate Report Card
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: 280, maxWidth: 320),
+          child: buildInfoCard(
+            context: context,
+            title: 'Climate Impact Report',
+            children: [
+              Text(
+                prediction.climateReport.impactStatement,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isErrorState ? Colors.red : null,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(prediction.climateReport.detailedAnalysis),
+              SizedBox(height: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Recommendations:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  ...prediction.climateReport.recommendations.map(
+                    (recommendation) => Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('• ', style: TextStyle(fontSize: 16)),
+                          Expanded(child: Text(recommendation)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ],
+  ];
 
   return Column(
     children: [
-      // Price Information
-      buildInfoCard(
-        context: context,
-        title: 'Price Analysis',
-        children: [
-          buildInfoRow('Current Prediction',
-              'ZiG ${prediction.currentPrediction.toStringAsFixed(2)}'),
-          buildInfoRow(
-              'Base Price', 'ZiG ${prediction.basePrice.toStringAsFixed(2)}'),
-          buildInfoRow('Climate Adjustment', prediction.climateAdjustment),
-        ],
-      ),
-
-      SizedBox(height: defaultPadding),
-
-      // Climate Stress Factors
-      buildInfoCard(
-        context: context,
-        title: 'Climate Stress Factors',
-        children: [
-          buildInfoRow('Temperature', '${tempFactors['value']}°C'),
-          buildInfoRow(
-              'Stress Score', tempFactors['stress_score'].toStringAsFixed(4)),
-          buildInfoRow('Optimal Range',
-              '${tempFactors['optimal_range'][0]}°C - ${tempFactors['optimal_range'][1]}°C'),
-          Divider(),
-          buildInfoRow('Rainfall', '${rainFactors['value']}mm'),
-          buildInfoRow(
-              'Stress Score', rainFactors['stress_score'].toStringAsFixed(4)),
-          buildInfoRow(
-              'Critical Threshold', '${rainFactors['critical_threshold']}mm'),
-        ],
-      ),
-
-      SizedBox(height: defaultPadding),
-
-      // Climate Report
-      buildInfoCard(
-        title: 'Climate Report',
-        children: [
-          Text(prediction.climateReport as String,
-              style: TextStyle(fontSize: 14)),
-        ],
-        context: context,
+      SizedBox(
+        height: 300,
+        width: MediaQuery.of(context).size.width,
+        child: Swiper(
+          allowImplicitScrolling: false,
+          itemBuilder: (BuildContext context, int index) {
+            return pages[index];
+          },
+          itemCount: pages.length,
+          viewportFraction: 01.2,
+          scale: 0.9,
+          pagination: SwiperPagination(
+            builder: DotSwiperPaginationBuilder(
+              color: Colors.grey,
+              activeColor: primaryColor,
+            ),
+          ),
+        ),
       ),
     ],
   );
 }
 
-Widget buildInfoCard({
+// Helper widget for climate factor sections
+Widget _buildClimateFactorSection(
+  BuildContext context, {
+  required String title,
+  required String value,
+  required double score,
+  List<dynamic>? range,
+  dynamic threshold,
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+      ),
+      SizedBox(height: 8),
+      buildInfoRow('Current', value),
+      buildInfoRow(
+        'Stress Score',
+        score.toStringAsFixed(4),
+        valueStyle: TextStyle(
+          color: _getStressColor(score),
+        ),
+      ),
+      if (range != null && range.length >= 2)
+        buildInfoRow(
+          'Optimal Range',
+          '${range[0]}°C - ${range[1]}°C',
+        ),
+      if (threshold != null)
+        buildInfoRow(
+          'Critical Threshold',
+          '$threshold${title == 'Temperature' ? '°C' : 'mm'}',
+        ),
+    ],
+  );
+}
+
+Color _getStressColor(double score) {
+  if (score > 0.2) return Colors.red;
+  if (score > 0.1) return Colors.orange;
+  return Colors.green;
+}
+
+Widget buildInfoRow(String label, String value, {TextStyle? valueStyle}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        Text(
+          '$label: ',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: valueStyle,
+            textAlign: TextAlign.end,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Card buildInfoCard({
+  required BuildContext context,
   required String title,
   required List<Widget> children,
-  required BuildContext context,
 }) {
   return Card(
+    color: Colors.transparent,
     elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-      side: BorderSide(color: Colors.grey.shade200),
-    ),
     child: Padding(
-      padding: EdgeInsets.all(defaultPadding),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -200,26 +387,21 @@ Widget buildInfoCard({
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: primaryColor,
                 ),
           ),
-          SizedBox(height: 8),
-          ...children,
+          Divider(height: 20, thickness: 1),
+          Expanded(
+            // Add this
+            child: SingleChildScrollView(
+              // Also consider adding this for scrollable content
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: children,
+              ),
+            ),
+          ),
         ],
       ),
-    ),
-  );
-}
-
-Widget buildInfoRow(String label, String value) {
-  return Padding(
-    padding: EdgeInsets.symmetric(vertical: 4),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: TextStyle(fontWeight: FontWeight.w500)),
-        Text(value, style: TextStyle(fontWeight: FontWeight.bold)),
-      ],
     ),
   );
 }
