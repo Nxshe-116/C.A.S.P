@@ -1,158 +1,205 @@
 class RealTimePrediction {
   final String symbol;
-  final double predictedClose;
+  final double currentPrediction;
+  final double? previousPrediction;
   final DateTime timestamp;
 
-  RealTimePrediction({required this.symbol, required this.predictedClose, required this.timestamp});
+  RealTimePrediction({
+    required this.symbol,
+    required this.currentPrediction,
+    this.previousPrediction,
+    required this.timestamp,
+  });
 
   factory RealTimePrediction.fromJson(Map<String, dynamic> json) {
     return RealTimePrediction(
-      predictedClose: json['predicted_close'] as double,
-      symbol: json['symbol'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      symbol: json['symbol'],
+      currentPrediction: (json['current_prediction'] as num).toDouble(),
+      previousPrediction: json['previous_prediction'] != null
+          ? (json['previous_prediction'] as num).toDouble()
+          : null,
+      timestamp: DateTime.parse(json['timestamp']),
     );
   }
 }
-
-class RealTimePredictionResponse {
-  final bool success;
-  final RealTimePrediction data;
-
-  RealTimePredictionResponse({required this.success, required this.data});
-
-  factory RealTimePredictionResponse.fromJson(Map<String, dynamic> json) {
-    return RealTimePredictionResponse(
-      success: json['success'],
-      data: RealTimePrediction.fromJson(json['data']),
-    );
-  }
-}
-
-
 
 class HistoricalPrediction {
   final String date;
   final double predictedClose;
   final double actualClose;
 
-  HistoricalPrediction({required this.date, required this.predictedClose, required this.actualClose});
+  HistoricalPrediction({
+    required this.date,
+    required this.predictedClose,
+    required this.actualClose,
+  });
 
   factory HistoricalPrediction.fromJson(Map<String, dynamic> json) {
     return HistoricalPrediction(
       date: json['date'],
-      predictedClose: json['predicted_close'].toDouble(),
-      actualClose: json['actual_close'].toDouble(),
+      predictedClose: (json['predicted_close'] as num).toDouble(),
+      actualClose: (json['actual_close'] as num).toDouble(),
     );
   }
 }
-
-class HistoricalPredictionsResponse {
-  final bool success;
-  final String symbol;
-  final List<HistoricalPrediction> historicalPredictions;
-
-  HistoricalPredictionsResponse({required this.success, required this.symbol, required this.historicalPredictions});
-
-  factory HistoricalPredictionsResponse.fromJson(Map<String, dynamic> json) {
-    return HistoricalPredictionsResponse(
-      success: json['success'],
-      symbol: json['data']['symbol'],
-      historicalPredictions: List<HistoricalPrediction>.from(
-        json['data']['historical_predictions'].map((x) => HistoricalPrediction.fromJson(x)),
-      ),
-    );
-  }
-}
-
 
 class FuturePrediction {
   final int week;
   final double predictedClose;
 
-  FuturePrediction({required this.week, required this.predictedClose});
+  FuturePrediction({
+    required this.week,
+    required this.predictedClose,
+  });
 
   factory FuturePrediction.fromJson(Map<String, dynamic> json) {
     return FuturePrediction(
       week: json['week'],
-      predictedClose: json['predicted_close'].toDouble(),
+      predictedClose: (json['predicted_close'] as num).toDouble(),
     );
   }
 }
 
-class FuturePredictionsResponse {
-  final bool success;
+class AgriculturalPrediction {
   final String symbol;
-  final List<FuturePrediction> futurePredictions;
+  final double currentPrediction;
+  final double basePrice;
+  final String climateAdjustment;
+  final Map<String, dynamic> climateReport;
+  final Map<String, dynamic> stressFactors;
+  final String timestamp;
 
-  FuturePredictionsResponse({required this.success, required this.symbol, required this.futurePredictions});
+  AgriculturalPrediction({
+    required this.symbol,
+    required this.currentPrediction,
+    required this.basePrice,
+    required this.climateAdjustment,
+    required this.climateReport,
+    required this.stressFactors,
+    required this.timestamp,
+  });
 
-  factory FuturePredictionsResponse.fromJson(Map<String, dynamic> json) {
-    return FuturePredictionsResponse(
-      success: json['success'],
-      symbol: json['data']['symbol'],
-      futurePredictions: List<FuturePrediction>.from(
-        json['data']['future_predictions'].map((x) => FuturePrediction.fromJson(x)),
-      ),
+  factory AgriculturalPrediction.fromJson(Map<String, dynamic> json) {
+    return AgriculturalPrediction(
+      symbol: json['symbol'],
+      currentPrediction: (json['current_prediction'] as num).toDouble(),
+      basePrice: (json['base_price'] as num).toDouble(),
+      climateAdjustment: json['climate_adjustment'],
+      climateReport: json['climate_report'],
+      stressFactors: json['stress_factors'],
+      timestamp: json['timestamp'],
     );
   }
-
-
-
-
-  
 }
 
 class Prediction {
   final String symbol;
-  final double predictedClose;
-  final String timestamp;
+  final double currentPrediction;
+  final List<WeeklyPrediction> weeklyPredictions;
 
   Prediction({
     required this.symbol,
-    required this.predictedClose,
-    required this.timestamp,
+    required this.currentPrediction,
+    required this.weeklyPredictions,
   });
 
   factory Prediction.fromJson(Map<String, dynamic> json) {
     return Prediction(
       symbol: json['symbol'],
-      predictedClose: json['predicted_close'].toDouble(),
-      timestamp: json['timestamp'],
+      currentPrediction: (json['current_prediction'] as num).toDouble(),
+      weeklyPredictions: List<WeeklyPrediction>.from(
+          json['weekly_predictions'].map((x) => WeeklyPrediction.fromJson(x))),
     );
   }
 }
 
-
-
-
 class PredictionWithClimate {
   final String symbol;
-  final double predictedClose;
-  final String timestamp;
-  final Map<String, dynamic> climateData;
+  final double currentPrediction;
+  final List<WeeklyPrediction> weeklyPredictions;
+  final ClimateMetrics climateMetrics;
 
   PredictionWithClimate({
     required this.symbol,
-    required this.predictedClose,
-    required this.timestamp,
-    required this.climateData,
+    required this.currentPrediction,
+    required this.weeklyPredictions,
+    required this.climateMetrics,
   });
 
   factory PredictionWithClimate.fromJson(Map<String, dynamic> json) {
     return PredictionWithClimate(
       symbol: json['symbol'],
-      predictedClose: json['predicted_close'].toDouble(),
-      timestamp: json['timestamp'],
-      climateData: json['climate_data'],
+      currentPrediction: (json['current_prediction'] as num).toDouble(),
+      weeklyPredictions: List<WeeklyPrediction>.from(
+          json['weekly_predictions'].map((x) => WeeklyPrediction.fromJson(x))),
+      climateMetrics: ClimateMetrics.fromJson(json['climate_metrics']),
     );
   }
-
-
-
-
-  
 }
 
+class WeeklyPrediction {
+  final int week;
+  final double open;
+  final double high;
+  final double low;
+  final double close;
+  final double? adjustedClose; // Nullable for non-climate predictions
+  final String? climateAdjustment;
+  final double? temperatureStress;
+  final double? rainfallStress;
 
+  WeeklyPrediction({
+    required this.week,
+    required this.open,
+    required this.high,
+    required this.low,
+    required this.close,
+    this.adjustedClose,
+    this.climateAdjustment,
+    this.temperatureStress,
+    this.rainfallStress,
+  });
 
- 
+  factory WeeklyPrediction.fromJson(Map<String, dynamic> json) {
+    return WeeklyPrediction(
+      week: json['week'],
+      open: (json['open'] as num).toDouble(),
+      high: (json['high'] as num).toDouble(),
+      low: (json['low'] as num).toDouble(),
+      close: (json['close'] as num).toDouble(),
+      adjustedClose: json['adjusted_close'] != null
+          ? (json['adjusted_close'] as num).toDouble()
+          : null,
+      climateAdjustment: json['climate_adjustment'],
+      temperatureStress: json['temperature_stress'] != null
+          ? (json['temperature_stress'] as num).toDouble()
+          : null,
+      rainfallStress: json['rainfall_stress'] != null
+          ? (json['rainfall_stress'] as num).toDouble()
+          : null,
+    );
+  }
+}
+
+class ClimateMetrics {
+  final double averageTempC;
+  final bool growingSeason;
+  final double rainfallAnomalyMm;
+  final double stressScore;
+
+  ClimateMetrics({
+    required this.averageTempC,
+    required this.growingSeason,
+    required this.rainfallAnomalyMm,
+    required this.stressScore,
+  });
+
+  factory ClimateMetrics.fromJson(Map<String, dynamic> json) {
+    return ClimateMetrics(
+      averageTempC: (json['average_temp_c'] as num).toDouble(),
+      growingSeason: json['growing_season'],
+      rainfallAnomalyMm: (json['rainfall_anomaly_mm'] as num).toDouble(),
+      stressScore: (json['stress_score'] as num).toDouble(),
+    );
+  }
+}

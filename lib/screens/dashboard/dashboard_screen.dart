@@ -17,7 +17,8 @@ class DashboardScreen extends StatelessWidget {
   const DashboardScreen({
     Key? key,
     required this.name,
-    required this.lastName, required this.uid,
+    required this.lastName,
+    required this.uid,
   }) : super(key: key);
 
   @override
@@ -41,14 +42,14 @@ class DashboardScreen extends StatelessWidget {
                   flex: 5,
                   child: Column(
                     children: [
-                      MyFiles(uid:uid),
+                      MyFiles(uid: uid),
                       SizedBox(height: defaultPadding),
-                     
                       RecentFiles(userId: uid),
                       if (Responsive.isMobile(context))
                         SizedBox(height: defaultPadding),
                       if (Responsive.isMobile(context))
                         StockDetails(
+                          userId: uid,
                           stockDetails: StockInfo(
                             companyName: "Tanganda Tea Company",
                             ticker: "TANG",
@@ -138,6 +139,7 @@ class DashboardScreen extends StatelessWidget {
                           0.9
                         ],
                       ),
+                      userId: uid,
                     ),
                   ),
               ],

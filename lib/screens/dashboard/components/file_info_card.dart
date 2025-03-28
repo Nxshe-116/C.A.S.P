@@ -41,8 +41,8 @@ class StockInfoCard extends StatelessWidget {
                     ? 36.h
                     : 36.h, // Adjust height for mobile
                 width: Responsive.isMobile(context)
-                    ? 42.w
-                    : 1.w, // Adjust width for mobile
+                    ? 35.w
+                    : 10.w, // Adjust width for mobile
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEFEFE),
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
@@ -109,16 +109,24 @@ class StockInfoCard extends StatelessWidget {
           else if (realTimeData != null)
             Row(
               children: [
-                Text("\$${realTimeData!.predictedClose.toStringAsFixed(2)}",
+                Text("\$${realTimeData!.currentPrediction.toStringAsFixed(2)}",
                     style: TextStyle(fontSize: 16)),
                 SizedBox(width: defaultPadding),
                 Text(
-                  "${realTimeData!.predictedClose > 0 ? "+" : ""}${realTimeData!.predictedClose.toStringAsFixed(2)}%",
-                  style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                      color: realTimeData!.predictedClose > 0
-                          ? Colors.green
-                          : Colors.red),
-                ),
+                  realTimeData != null &&
+                          realTimeData!.previousPrediction != null
+                      ? "${((realTimeData!.currentPrediction - realTimeData!.previousPrediction!) / realTimeData!.previousPrediction! * 100).toStringAsFixed(2)}%"
+                      : "--",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: realTimeData != null &&
+                                realTimeData!.previousPrediction != null
+                            ? (realTimeData!.currentPrediction >=
+                                    realTimeData!.previousPrediction!
+                                ? Colors.green
+                                : Colors.red)
+                            : Colors.grey,
+                      ),
+                )
               ],
             )
           else

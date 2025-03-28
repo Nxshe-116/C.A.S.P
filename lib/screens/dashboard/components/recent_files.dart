@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:admin/models/tickers.dart';
 import 'package:admin/responsive.dart';
 import 'package:flutter/material.dart';
@@ -5,7 +7,9 @@ import 'package:shimmer/shimmer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:admin/models/predictions.dart'; // Ensure this import is correct
 import 'package:admin/services/services.dart'; // Ensure this import is correct
-import 'package:admin/constants.dart'; // Ensure this import is correct
+import 'package:admin/constants.dart';
+import 'package:syncfusion_flutter_charts/charts.dart'; // Ensure this import is correct
+import 'package:intl/intl.dart';
 
 class RecentFiles extends StatefulWidget {
   final String userId;
@@ -69,7 +73,7 @@ class _RecentFilesState extends State<RecentFiles> {
       try {
         final prediction =
             await apiService.fetchPredictionWithoutClimate(stock);
-        predictions[stock] = prediction;
+        predictions[stock] = prediction!;
       } catch (e) {
         print('Error fetching prediction for $stock: $e');
       }
@@ -290,10 +294,6 @@ class StockListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double percentageChange = ((prediction.predictedClose - 859) / 100) * 100;
-    String formattedChange = percentageChange >= 0
-        ? "+${percentageChange.toStringAsFixed(2)}%"
-        : "${percentageChange.toStringAsFixed(2)}%";
     return Card(
       color: Color(0xFFF4FAFF),
       elevation: 5,
@@ -306,21 +306,13 @@ class StockListTile extends StatelessWidget {
           stockName,
           style: TextStyle(fontSize: 12),
         ),
-        subtitle: Text(stockTicker),
-        trailing: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '\$${prediction.predictedClose.toStringAsFixed(2)}',
-              style: TextStyle(fontWeight: FontWeight.w800),
-            ),
-            Text(
-              formattedChange,
-              style: TextStyle(
-                color: percentageChange >= 0 ? Colors.green : Colors.red,
-              ),
-            ),
-          ],
+        subtitle: Text(
+          stockTicker,
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
+        ),
+        trailing: Text(
+          '\$${prediction.currentPrediction.toStringAsFixed(2)}',
+          style: TextStyle(fontWeight: FontWeight.w800),
         ),
         onTap: press,
       ),
@@ -330,7 +322,6 @@ class StockListTile extends StatelessWidget {
 
 class ChartWidget extends StatefulWidget {
   final String? stock;
-
   const ChartWidget({Key? key, this.stock}) : super(key: key);
 
   @override
@@ -343,6 +334,7 @@ class _ChartWidgetState extends State<ChartWidget> {
   PredictionWithClimate? predictionWithClimate;
   bool isLoading = false;
   String? errorMessage;
+  List<ChartData> chartData = [];
 
   @override
   void didUpdateWidget(ChartWidget oldWidget) {
@@ -356,121 +348,149 @@ class _ChartWidgetState extends State<ChartWidget> {
     setState(() {
       isLoading = true;
       errorMessage = null;
+      chartData.clear();
     });
 
     try {
-      // Fetch data from both endpoints
-      final predictionWithoutClimateData =
+      final withoutClimate =
           await apiService.fetchPredictionWithoutClimate(symbol);
-      final predictionWithClimateData =
-          await apiService.fetchPredictionWithClimate(symbol);
+      final withClimate = await apiService.fetchPredictionWithClimate(symbol);
+
+      if (withoutClimate == null || withClimate == null) {
+        throw Exception('Failed to load prediction data');
+      }
+
+      // Use climate-adjusted data for the chart
+      chartData = withClimate.weeklyPredictions.map((weeklyPred) {
+        return ChartData(
+          x: DateTime.now().add(Duration(days: 7 * weeklyPred.week)),
+          open: weeklyPred.open,
+          high: weeklyPred.high,
+          low: weeklyPred.low,
+          close: weeklyPred.adjustedClose ?? weeklyPred.close,
+        );
+      }).toList();
 
       setState(() {
-        predictionWithoutClimate = predictionWithoutClimateData;
-        predictionWithClimate = predictionWithClimateData;
+        predictionWithoutClimate = withoutClimate;
+        predictionWithClimate = withClimate;
         isLoading = false;
       });
     } catch (e) {
       setState(() {
-        errorMessage = e.toString();
+        errorMessage = 'Failed to load data: ${e.toString()}';
         isLoading = false;
       });
+      debugPrint('Error in _fetchData: $e');
     }
+  }
+
+  Widget _buildShimmerChart() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        margin: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        height: 300,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-        height: 200,
-        child: Center(
-          child: widget.stock == null
-              ? Text(
-                  'No stock selected',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                )
-              : isLoading
-                  ? CircularProgressIndicator() // Show loading indicator
-                  : errorMessage != null
-                      ? Text(
-                          'Error: $errorMessage',
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red),
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (predictionWithoutClimate != null)
-                              Text(
-                                'Without Climate: ${predictionWithoutClimate?.predictedClose.toString()}',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                            SizedBox(height: 10),
-                            if (predictionWithClimate != null)
-                              Text(
-                                'With Climate: ${predictionWithClimate?.predictedClose.toString()}',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                          ],
+      height: 600,
+      child: Column(
+        children: [
+          // Prediction Text Display
+          Container(
+            height: 100,
+            child: Center(
+              child: widget.stock == null
+                  ? Text(
+                      'No stock selected',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    )
+                  : isLoading
+                      ? _buildShimmerChart()
+                      : errorMessage != null
+                          ? Text(
+                              'Error: $errorMessage',
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red),
+                            )
+                          : Container(),
+            ),
+          ),
+
+          // Chart Visualization
+          Expanded(
+            child: isLoading
+                ? _buildShimmerChart()
+                : chartData.isEmpty
+                    ? Center(child: Container())
+                    : SfCartesianChart(
+                        zoomPanBehavior: ZoomPanBehavior(
+                          enablePinching: true, // Enable pinch zoom
+                          enableDoubleTapZooming:
+                              true, // Enable double tap zoom
+                          enablePanning: true, // Enable panning
+                          enableSelectionZooming: true, // Enable selection zoom
+                          selectionRectBorderColor: Colors.red,
+                          selectionRectColor: Colors.grey.withOpacity(0.2),
                         ),
-        ));
+                        primaryXAxis: DateTimeAxis(
+                          title: AxisTitle(text: 'Weeks'),
+                          intervalType: DateTimeIntervalType.days,
+                          interval: 7,
+                          majorGridLines: const MajorGridLines(width: 0.15),
+                          dateFormat:
+                              DateFormat('MMM dd'), // Simple date format
+                        ),
+                        primaryYAxis: NumericAxis(
+                          numberFormat: NumberFormat.currency(
+                            symbol: 'ZiG ',
+                            decimalDigits: 2,
+                            customPattern: '¤#,##0.00',
+                          ),
+                        ),
+                        series: <CartesianSeries>[
+                          CandleSeries<ChartData, DateTime>(
+                            name: 'Stock Price',
+                            dataSource: chartData,
+                            xValueMapper: (ChartData data, _) => data.x,
+                            lowValueMapper: (ChartData data, _) => data.low,
+                            highValueMapper: (ChartData data, _) => data.high,
+                            openValueMapper: (ChartData data, _) => data.open,
+                            closeValueMapper: (ChartData data, _) => data.close,
+                            borderRadius: BorderRadius.all(Radius.circular(2)),
+                            width: 0.25,
+                            spacing: 0.2,
+                          ),
+                        ],
+                        tooltipBehavior: TooltipBehavior(enable: true),
+                      ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-// class ChartWidget extends StatelessWidget {
-//   final StockInfo? stock;
-
-//   const ChartWidget({Key? key, this.stock}) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     List<ChartData> chartData = [];
-
-//     if (stock != null) {
-//       // Populate the chart data based on the selected stock
-//       for (int i = 0; i < stock!.priceHistory.length; i++) {
-//         chartData.add(ChartData(
-//           x: DateTime.now().subtract(Duration(
-//               days: (stock!.priceHistory.length - i - 1) *
-//                   30)), // Adjusted to monthly intervals
-//           open: stock!.priceHistory[i].open,
-//           high: stock!.priceHistory[i].high,
-//           low: stock!.priceHistory[i].low,
-//           close: stock!.priceHistory[i].closingPrice,
-//         ));
-//       }
-//     }
-
-//     return Container(
-//       height: 200, // Set height for the chart
-//       child: SfCartesianChart(
-//         primaryXAxis: DateTimeAxis(
-//           intervalType: DateTimeIntervalType.months,
-//           interval: 1, // Set to one month intervals
-//           majorGridLines: const MajorGridLines(width: 0),
-//         ),
-//         series: <CartesianSeries>[
-//           // Candle series for stock price data
-//           CandleSeries<ChartData, DateTime>(
-//               name: 'Stock Price',
-//               dataSource: chartData,
-//               xValueMapper: (ChartData data, _) => data.x,
-//               lowValueMapper: (ChartData data, _) => data.low,
-//               highValueMapper: (ChartData data, _) => data.high,
-//               openValueMapper: (ChartData data, _) => data.open,
-//               closeValueMapper: (ChartData data, _) => data.close,
-//               borderRadius: BorderRadius.all(Radius.circular(5)),
-//               width: 0.5,
-//               spacing: 0.2),
-//         ],
-//         tooltipBehavior: TooltipBehavior(enable: true),
-//       ),
-//     );
-//   }
-// }
-
 class ChartData {
+  final DateTime x;
+  final double open;
+  final double high;
+  final double low;
+  final double close;
+
   ChartData({
     required this.x,
     required this.open,
@@ -478,10 +498,4 @@ class ChartData {
     required this.low,
     required this.close,
   });
-
-  final DateTime x;
-  final double open;
-  final double high;
-  final double low;
-  final double close;
 }

@@ -9,9 +9,10 @@ import '../../../constants.dart';
 
 class StockDetails extends StatelessWidget {
   final StockInfo stockDetails;
+  final String userId;
   const StockDetails({
     Key? key,
-    required this.stockDetails,
+    required this.stockDetails, required this.userId,
   }) : super(key: key);
 
   @override
@@ -38,11 +39,7 @@ class StockDetails extends StatelessWidget {
           
            // You can update the chart to reflect stock market trends
           StockInfoCard(
-            svgSrc: "assets/icons/trace.svg", // Update with a relevant icon
-            title: "${stockDetails.companyName}- ${stockDetails.ticker}",
-            amountOfShares:
-                stockDetails.closingPrice, // Share price or another metric
-            numOfShares: 1000000000, // This could represent number of shares
+          userId: userId, // This could represent number of shares
           ),
        
        
