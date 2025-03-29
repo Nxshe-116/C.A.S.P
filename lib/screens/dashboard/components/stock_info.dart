@@ -208,7 +208,7 @@ Widget buildPredictionDetails(
             context: context,
             title: 'Climate Stress Factors',
             children: [
-              _buildClimateFactorSection(
+              buildClimateFactorSection(
                 context,
                 title: 'Temperature',
                 value:
@@ -217,7 +217,7 @@ Widget buildPredictionDetails(
                 range: prediction.stressFactors.temperature.optimalRange,
               ),
               Divider(height: 20, thickness: 1),
-              _buildClimateFactorSection(
+              buildClimateFactorSection(
                 context,
                 title: 'Rainfall',
                 value:
@@ -303,7 +303,7 @@ Widget buildPredictionDetails(
 }
 
 // Helper widget for climate factor sections
-Widget _buildClimateFactorSection(
+Widget buildClimateFactorSection(
   BuildContext context, {
   required String title,
   required String value,
@@ -326,7 +326,7 @@ Widget _buildClimateFactorSection(
         'Stress Score',
         score.toStringAsFixed(4),
         valueStyle: TextStyle(
-          color: _getStressColor(score),
+          color: getStressColor(score),
         ),
       ),
       if (range != null && range.length >= 2)
@@ -343,7 +343,7 @@ Widget _buildClimateFactorSection(
   );
 }
 
-Color _getStressColor(double score) {
+Color getStressColor(double score) {
   if (score > 0.2) return Colors.red;
   if (score > 0.1) return Colors.orange;
   return Colors.green;
@@ -438,7 +438,10 @@ class _SearchFieldState extends State<SearchField> {
               items: widget.companies.map((String company) {
                 return DropdownMenuItem<String>(
                   value: company,
-                  child: Text(company),
+                  child: Text(
+                    company,
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w200),
+                  ),
                 );
               }).toList(),
               onChanged: widget.onChanged,

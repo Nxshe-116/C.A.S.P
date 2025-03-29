@@ -1,4 +1,4 @@
-import 'package:admin/models/my_files.dart';
+ 
 import 'package:admin/responsive.dart';
 import 'package:admin/screens/dashboard/components/climate.dart';
 import 'package:admin/screens/dashboard/components/stock_info.dart';
@@ -8,11 +8,11 @@ import '../../../constants.dart';
 // import 'chart.dart';
 
 class StockDetails extends StatelessWidget {
-  final StockInfo stockDetails;
+  // final StockInfo stockDetails;
   final String userId;
   const StockDetails({
     Key? key,
-    required this.stockDetails, required this.userId,
+     required this.userId,
   }) : super(key: key);
 
   @override

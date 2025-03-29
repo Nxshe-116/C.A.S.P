@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, dead_code
 
 import 'package:admin/models/tickers.dart';
 import 'package:admin/responsive.dart';
@@ -335,6 +335,8 @@ class _ChartWidgetState extends State<ChartWidget> {
   bool isLoading = false;
   String? errorMessage;
   List<ChartData> chartData = [];
+  List<ChartData> chartData1 = [];
+  bool displayClimateAdjustment = false;
 
   @override
   void didUpdateWidget(ChartWidget oldWidget) {
@@ -349,6 +351,7 @@ class _ChartWidgetState extends State<ChartWidget> {
       isLoading = true;
       errorMessage = null;
       chartData.clear();
+      chartData1.clear();
     });
 
     try {
@@ -362,6 +365,15 @@ class _ChartWidgetState extends State<ChartWidget> {
 
       // Use climate-adjusted data for the chart
       chartData = withClimate.weeklyPredictions.map((weeklyPred) {
+        return ChartData(
+          x: DateTime.now().add(Duration(days: 7 * weeklyPred.week)),
+          open: weeklyPred.open,
+          high: weeklyPred.high,
+          low: weeklyPred.low,
+          close: weeklyPred.adjustedClose ?? weeklyPred.close,
+        );
+      }).toList();
+      chartData1 = withoutClimate.weeklyPredictions.map((weeklyPred) {
         return ChartData(
           x: DateTime.now().add(Duration(days: 7 * weeklyPred.week)),
           open: weeklyPred.open,
@@ -410,24 +422,80 @@ class _ChartWidgetState extends State<ChartWidget> {
           Container(
             height: 100,
             child: Center(
-              child: widget.stock == null
-                  ? Text(
-                      'No stock selected',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    )
-                  : isLoading
-                      ? _buildShimmerChart()
-                      : errorMessage != null
-                          ? Text(
-                              'Error: $errorMessage',
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red),
-                            )
-                          : Container(),
-            ),
+                child: widget.stock == null
+                    ? Text(
+                        'No stock selected',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      )
+                    : isLoading
+                        ? _buildShimmerChart()
+                        : errorMessage != null
+                            ? Text(
+                                'Error: $errorMessage',
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.red),
+                              )
+                            : Container(
+                                margin: EdgeInsets.symmetric(
+                                    horizontal: 16.0, vertical: 8.0),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF4FAFF),
+                                  borderRadius: BorderRadius.circular(12.0),
+                                ),
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 16.0, vertical: 8.0),
+                                  leading: Icon(
+                                    Icons
+                                        .thermostat_auto, // Climate-related icon
+                                    color: displayClimateAdjustment
+                                        ? Theme.of(context).primaryColor
+                                        : Colors.grey[600],
+                                  ),
+                                  title: Text(
+                                    "Display Climate Adjustment",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w900,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.color,
+                                    ),
+                                  ),
+                                  trailing: Transform.scale(
+                                    scale: 0.6, // Slightly smaller switch
+                                    child: Switch.adaptive(
+                                      value: displayClimateAdjustment,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          displayClimateAdjustment = value;
+                                        });
+                                      },
+                                      activeColor: primaryColor,
+                                      thumbColor: MaterialStateProperty
+                                          .resolveWith<Color>(
+                                        (states) => states.contains(
+                                                MaterialState.selected)
+                                            ? Colors.white
+                                            : Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12.0),
+                                  ),
+                                  onTap: () {
+                                    setState(() {
+                                      displayClimateAdjustment =
+                                          !displayClimateAdjustment;
+                                    });
+                                  },
+                                ),
+                              )),
           ),
 
           // Chart Visualization
@@ -455,12 +523,20 @@ class _ChartWidgetState extends State<ChartWidget> {
                               DateFormat('MMM dd'), // Simple date format
                         ),
                         primaryYAxis: NumericAxis(
+                          minimum: 100, // Set lower bound
+                          maximum: 900, // Set upper bound
+                          interval: 100, // Gap between Y-axis labels
                           numberFormat: NumberFormat.currency(
                             symbol: 'ZiG ',
                             decimalDigits: 2,
                             customPattern: '¤#,##0.00',
                           ),
                         ),
+                        // palette: <Color>[
+                        //   Colors.teal,
+                        //   Colors.orange,
+                        //   Colors.brown
+                        // ],
                         series: <CartesianSeries>[
                           CandleSeries<ChartData, DateTime>(
                             name: 'Stock Price',
@@ -474,6 +550,23 @@ class _ChartWidgetState extends State<ChartWidget> {
                             width: 0.25,
                             spacing: 0.2,
                           ),
+                          if (displayClimateAdjustment)
+                            HiloOpenCloseSeries<ChartData, DateTime>(
+                              name: 'Stock Price',
+                              dataSource: chartData1,
+                              xValueMapper: (ChartData data, _) => data.x,
+                              lowValueMapper: (ChartData data, _) => data.low,
+                              highValueMapper: (ChartData data, _) => data.high,
+                              openValueMapper: (ChartData data, _) => data.open,
+                              closeValueMapper: (ChartData data, _) =>
+                                  data.close,
+                              bearColor: Colors
+                                  .lightGreenAccent, // Color when close < open
+                              bullColor: Colors.redAccent,
+                              // borderRadius: BorderRadius.all(Radius.circular(2)),
+                              //  width: 0.25,
+                              spacing: 0.2,
+                            ),
                         ],
                         tooltipBehavior: TooltipBehavior(enable: true),
                       ),

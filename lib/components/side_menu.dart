@@ -47,17 +47,17 @@ class _SideMenuState extends State<SideMenu> {
             press: () => widget
                 .onMenuItemSelected(0), // Trigger page switch to Dashboard
           ),
-          DrawerListTile(
-            title: "History",
-            svgSrc: "assets/icons/menu_tran.svg",
-            press: () => widget
-                .onMenuItemSelected(1), // Trigger page switch to Transaction
-          ),
+          // DrawerListTile(
+          //   title: "History",
+          //   svgSrc: "assets/icons/menu_tran.svg",
+          //   press: () => widget
+          //       .onMenuItemSelected(1), // Trigger page switch to Transaction
+          // ),
           DrawerListTile(
             title: "Insight",
             svgSrc: "assets/icons/menu_store.svg",
             press: () =>
-                widget.onMenuItemSelected(2), // Trigger page switch to Store
+                widget.onMenuItemSelected(1), // Trigger page switch to Store
           ),
 
           StreamBuilder<List<Notifications>>(
@@ -68,7 +68,7 @@ class _SideMenuState extends State<SideMenu> {
                   title: "Notifications",
                   svgSrc: "assets/icons/menu_notification.svg",
                   press: () =>
-                      widget.onMenuItemSelected(3), // Switch to Notifications
+                      widget.onMenuItemSelected(2), // Switch to Notifications
                 );
               }
 
@@ -77,7 +77,7 @@ class _SideMenuState extends State<SideMenu> {
                   title: "Notifications",
                   svgSrc: "assets/icons/menu_notification.svg",
                   press: () =>
-                      widget.onMenuItemSelected(3), // Switch to Notifications
+                      widget.onMenuItemSelected(2), // Switch to Notifications
                 );
               }
 
@@ -86,7 +86,7 @@ class _SideMenuState extends State<SideMenu> {
                   title: "Notifications",
                   svgSrc: "assets/icons/menu_notification.svg",
                   press: () =>
-                      widget.onMenuItemSelected(3), // Switch to Notifications
+                      widget.onMenuItemSelected(2), // Switch to Notifications
                 );
               }
 
@@ -108,7 +108,7 @@ class _SideMenuState extends State<SideMenu> {
                   title: "Notifications",
                   svgSrc: "assets/icons/menu_notification.svg",
                   press: () =>
-                      widget.onMenuItemSelected(3), // Switch to Notifications
+                      widget.onMenuItemSelected(2), // Switch to Notifications
                 ),
               );
             },
@@ -132,7 +132,7 @@ class _SideMenuState extends State<SideMenu> {
             title: "Profile",
             svgSrc: "assets/icons/menu_profile.svg",
             press: () =>
-                widget.onMenuItemSelected(4), // Trigger page switch to Profile
+                widget.onMenuItemSelected(3), // Trigger page switch to Profile
           ),
         ],
       ),

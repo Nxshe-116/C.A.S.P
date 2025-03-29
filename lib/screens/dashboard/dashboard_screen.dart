@@ -1,4 +1,4 @@
-import 'package:admin/models/my_files.dart';
+ 
 import 'package:admin/responsive.dart';
 import 'package:admin/screens/dashboard/components/my_fields.dart';
 import 'package:flutter/material.dart';
@@ -50,45 +50,6 @@ class DashboardScreen extends StatelessWidget {
                       if (Responsive.isMobile(context))
                         StockDetails(
                           userId: uid,
-                          stockDetails: StockInfo(
-                            companyName: "Tanganda Tea Company",
-                            ticker: "TANG",
-                            closingPrice: 150.45,
-                            priceChange: 1.5,
-                            climateImpactFactor: 0.9,
-                            priceHistory: [
-                              PriceData(
-                                  open: 145.00,
-                                  high: 150.00,
-                                  low: 144.00,
-                                  closingPrice: 150.45),
-                              PriceData(
-                                  open: 148.50,
-                                  high: 150.50,
-                                  low: 146.00,
-                                  closingPrice: 149.80),
-                              // Add similar data for other entries
-                            ],
-                            climateImpactHistory: [
-                              0.7,
-                              0.8,
-                              0.7,
-                              0.9,
-                              0.8,
-                              0.7,
-                              0.8,
-                              0.7,
-                              0.9,
-                              0.8,
-                              0.9,
-                              1.0,
-                              0.8,
-                              0.9,
-                              1.0,
-                              0.8,
-                              0.9
-                            ],
-                          ),
                         ),
                     ],
                   ),
@@ -100,45 +61,6 @@ class DashboardScreen extends StatelessWidget {
                   Expanded(
                     flex: 2,
                     child: StockDetails(
-                      stockDetails: StockInfo(
-                        companyName: "Tanganda Tea Company",
-                        ticker: "TANG",
-                        closingPrice: 150.45,
-                        priceChange: 1.5,
-                        climateImpactFactor: 0.9,
-                        priceHistory: [
-                          PriceData(
-                              open: 145.00,
-                              high: 150.00,
-                              low: 144.00,
-                              closingPrice: 150.45),
-                          PriceData(
-                              open: 148.50,
-                              high: 150.50,
-                              low: 146.00,
-                              closingPrice: 149.80),
-                          // Add similar data for other entries
-                        ],
-                        climateImpactHistory: [
-                          0.7,
-                          0.8,
-                          0.7,
-                          0.9,
-                          0.8,
-                          0.7,
-                          0.8,
-                          0.7,
-                          0.9,
-                          0.8,
-                          0.9,
-                          1.0,
-                          0.8,
-                          0.9,
-                          1.0,
-                          0.8,
-                          0.9
-                        ],
-                      ),
                       userId: uid,
                     ),
                   ),

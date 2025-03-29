@@ -43,11 +43,11 @@ class _MainScreenState extends State<MainScreen> {
         lastName: widget.lastName,
         uid: widget.uid,
       ),
-      PortfolioScreen(
-        name: widget.name,
-        lastName: widget.lastName,
-        uid: widget.uid,
-      ),
+      // PortfolioScreen(
+      //   name: widget.name,
+      //   lastName: widget.lastName,
+      //   uid: widget.uid,
+      // ),
       InsightScreen(
         name: widget.name,
         lastName: widget.lastName,
