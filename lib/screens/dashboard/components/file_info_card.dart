@@ -113,15 +113,13 @@ class StockInfoCard extends StatelessWidget {
                     style: TextStyle(fontSize: 16)),
                 SizedBox(width: defaultPadding),
                 Text(
-                  realTimeData != null &&
-                          realTimeData!.previousPrediction != null
-                      ? "${((realTimeData!.currentPrediction - realTimeData!.previousPrediction!) / realTimeData!.previousPrediction! * 100).toStringAsFixed(2)}%"
+                  realTimeData != null
+                      ? "${((realTimeData!.currentPrediction - realTimeData!.previousPrediction) / realTimeData!.previousPrediction * 100).toStringAsFixed(2)}%"
                       : "--",
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: realTimeData != null &&
-                                realTimeData!.previousPrediction != null
+                        color: realTimeData != null
                             ? (realTimeData!.currentPrediction >=
-                                    realTimeData!.previousPrediction!
+                                    realTimeData!.previousPrediction
                                 ? Colors.green
                                 : Colors.red)
                             : Colors.grey,
