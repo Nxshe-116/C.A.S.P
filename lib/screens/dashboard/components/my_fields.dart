@@ -197,7 +197,7 @@ class _FileInfoCardGridViewState extends State<FileInfoCardGridView> {
     return GridView.builder(
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      itemCount: watchlist.length,
+      itemCount: watchlist.length >= 4 ? 4 : watchlist.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount, // Dynamic crossAxisCount
         crossAxisSpacing: defaultPadding,
@@ -239,11 +239,10 @@ void showDataDialog(
           final screenHeight = MediaQuery.of(context).size.height;
 
           // Adjust dialog size for mobile
-          final dialogWidth = Responsive.isMobile(context)
-              ? screenWidth * 0.9  
-              : 600; 
+          final dialogWidth =
+              Responsive.isMobile(context) ? screenWidth * 0.9 : 600;
           final dialogHeight = Responsive.isMobile(context)
-              ? screenHeight * 0.8 // 
+              ? screenHeight * 0.8 //
               : 600; // Fixed height for desktop
 
           return AlertDialog(

@@ -1,28 +1,25 @@
 class RealTimePrediction {
-  final String symbol;
   final double currentPrediction;
-  final double? previousPrediction;
+  final double previousPrediction;
+  final String symbol;
   final DateTime timestamp;
 
   RealTimePrediction({
-    required this.symbol,
     required this.currentPrediction,
-    this.previousPrediction,
+    required this.previousPrediction,
+    required this.symbol,
     required this.timestamp,
   });
 
   factory RealTimePrediction.fromJson(Map<String, dynamic> json) {
     return RealTimePrediction(
-      symbol: json['symbol'],
       currentPrediction: (json['current_prediction'] as num).toDouble(),
-      previousPrediction: json['previous_prediction'] != null
-          ? (json['previous_prediction'] as num).toDouble()
-          : null,
-      timestamp: DateTime.parse(json['timestamp']),
+      previousPrediction: (json['previous_prediction'] as num).toDouble(),
+      symbol: json['symbol'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
     );
   }
 }
-
 class HistoricalPrediction {
   final String date;
   final double predictedClose;

@@ -3,6 +3,7 @@ import 'package:admin/controllers/menu_app_controller.dart';
 import 'package:admin/responsive.dart';
 import 'package:admin/screens/dashboard/dashboard_screen.dart';
 import 'package:admin/screens/notif/notification.dart';
+import 'package:admin/screens/portfolio/portfolio.dart';
 
 // import 'package:admin/screens/portfolio/portfolio.dart';
 import 'package:admin/screens/profile/profile.dart';
@@ -43,11 +44,11 @@ class _MainScreenState extends State<MainScreen> {
         lastName: widget.lastName,
         uid: widget.uid,
       ),
-      // PortfolioScreen(
-      //   name: widget.name,
-      //   lastName: widget.lastName,
-      //   uid: widget.uid,
-      // ),
+      PortfolioScreen(
+        name: widget.name,
+        lastName: widget.lastName,
+        uid: widget.uid,
+      ),
       InsightScreen(
         name: widget.name,
         lastName: widget.lastName,

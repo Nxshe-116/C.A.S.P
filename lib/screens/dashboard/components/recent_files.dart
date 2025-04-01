@@ -98,7 +98,7 @@ class _RecentFilesState extends State<RecentFiles> {
           Text(
             "My Watchlist",
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontSize: isMobile ? 16 : 18, // Adjust font size for mobile
+                  fontSize: isMobile ? 12 : 18, // Adjust font size for mobile
                 ),
           ),
           SizedBox(height: isMobile ? defaultPadding / 2 : defaultPadding),

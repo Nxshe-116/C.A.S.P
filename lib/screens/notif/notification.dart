@@ -25,7 +25,7 @@ class _NotifictionScreenState extends State<NotifictionScreen> {
   Stream<List<Notifications>> getNotifications() {
     return FirebaseFirestore.instance
         .collection('notifications')
-        .where('userId', isEqualTo: widget.uid) // Filter by userId
+        .where('userId', whereIn: [widget.uid, 'admin']) // Filter by userId
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Notifications.fromMap(doc.data(), doc.id))
@@ -135,11 +135,15 @@ class _NotifictionScreenState extends State<NotifictionScreen> {
                                         FirebaseFirestore.instance
                                             .collection('notifications')
                                             .doc(notification.notifId)
-                                            .update({'isRead': notification.isRead});
+                                            .update({
+                                          'isRead': notification.isRead
+                                        });
                                       });
                                     },
                                     child: Text(
-                                      notification.isRead ? 'Mark as Unread' : 'Mark as Read',
+                                      notification.isRead
+                                          ? 'Mark as Unread'
+                                          : 'Mark as Read',
                                       style: TextStyle(
                                         fontWeight: FontWeight.w500,
                                         color: primaryColor,
