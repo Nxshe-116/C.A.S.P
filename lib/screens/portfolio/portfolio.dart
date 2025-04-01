@@ -509,10 +509,10 @@ class StockValidation {
       previousPrediction: previousPrediction ?? this.previousPrediction,
       actualPrice: actualPrice ?? this.actualPrice,
       // Remove these if not using metrics:
-      mse: mse ?? this.mse,
-      rmse: rmse ?? this.rmse,
-      mae: mae ?? this.mae,
-      rSquared: rSquared ?? this.rSquared,
+      mse: mse,
+      rmse: rmse,
+      mae: mae,
+      rSquared: rSquared,
     );
   }
 }
