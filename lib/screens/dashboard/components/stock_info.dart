@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, unnecessary_null_comparison
 
 import 'package:admin/models/predictions.dart';
 import 'package:admin/screens/dashboard/components/date_formatter.dart';
@@ -13,10 +13,7 @@ import '../../../constants.dart';
 class StockInfoCard extends StatefulWidget {
   final String userId;
 
-  const StockInfoCard({
-    Key? key,
-    required this.userId, // Updated parameter
-  }) : super(key: key);
+  const StockInfoCard({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<StockInfoCard> createState() => _StockInfoCardState();
@@ -28,74 +25,61 @@ class _StockInfoCardState extends State<StockInfoCard> {
   String? selectedCompany;
   AgriculturalPrediction? currentPrediction;
   bool isLoading = false;
+  String? errorMessage;
+  int _retryCount = 0;
+  final int _maxRetries = 2;
 
   @override
   void initState() {
     super.initState();
-    //  predictionsFuture = Future.value({}); // Initialize with an empty Future
-    fetchSelectedCompanies();
+    _initializeData();
   }
 
-  Future<void> fetchSelectedCompanies() async {
+  Future<void> _initializeData() async {
     try {
+      await _fetchSelectedCompanies();
+    } catch (e) {
+      _handleError('Failed to initialize data', e);
+    }
+  }
+
+  Future<void> _fetchSelectedCompanies() async {
+    try {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+
       final DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(widget.userId)
           .get();
 
-      if (userDoc.exists) {
-        final userData = userDoc.data() as Map<String, dynamic>?;
-        final companies = (userData?['selectedCompanies'] as List<dynamic>?)
-                ?.map((c) => c['name'] as String)
-                .toList() ??
-            [];
+      if (!mounted) return;
 
-        if (mounted) {
-          setState(() => watchlist = companies);
-          if (companies.isNotEmpty) {
-            await fetchCompanyPrediction(companies.first);
-          }
-        }
-      } else {
-        print('User document not found.');
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
       }
+
+      final userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      final companies = (userData['selectedCompanies'] as List<dynamic>?)
+              ?.map<String>((c) => c is Map ? c['name']?.toString() ?? '' : '')
+              .where((name) => name.isNotEmpty)
+              .toList() ??
+          [];
+
+      if (companies.isEmpty) {
+        throw Exception('No companies in watchlist');
+      }
+
+      setState(() {
+        watchlist = companies;
+        selectedCompany = companies.first;
+      });
+
+      await _fetchCompanyPredictionWithRetry(selectedCompany!);
     } catch (e) {
-      print('Error fetching selected companies: $e');
-    }
-  }
-
-  Future<void> fetchCompanyPrediction(String symbol) async {
-    if (!mounted) return;
-
-    setState(() {
-      isLoading = true;
-      selectedCompany = symbol;
-      currentPrediction = null; // Clear previous prediction
-    });
-
-    try {
-      final response = await apiService.fetchAgriculturalPrediction(symbol);
-      if (!mounted) return;
-
-      setState(() {
-        currentPrediction = response;
-      });
-    } catch (e, stackTrace) {
-      print('Error fetching prediction for $symbol: $e');
-      print(stackTrace);
-      if (!mounted) return;
-
-      setState(() {
-        currentPrediction = null;
-      });
-
-      // Show error to user if the widget is still mounted
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load prediction for $symbol'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      _handleError('Failed to load watchlist', e);
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -103,48 +87,250 @@ class _StockInfoCardState extends State<StockInfoCard> {
     }
   }
 
-  // Renamed
+  Future<void> _fetchCompanyPredictionWithRetry(String symbol) async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+      _retryCount = 0;
+    });
+    await _fetchCompanyPrediction(symbol);
+  }
+
+  Future<void> _fetchCompanyPrediction(String symbol) async {
+    try {
+      final response = await apiService.fetchAgriculturalPrediction(symbol);
+
+      if (response == null) {
+        throw Exception('Received null prediction response');
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        currentPrediction = response;
+        errorMessage = null;
+      });
+    } catch (e) {
+      if (_retryCount < _maxRetries) {
+        _retryCount++;
+        await Future.delayed(Duration(seconds: 1));
+        await _fetchCompanyPrediction(symbol);
+      } else {
+        _handleError('Failed to load prediction for $symbol', e);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
+  void _handleError(String contextMessage, dynamic error) {
+    final message = error
+        .toString()
+        .replaceAll('Unexpected null value', 'Missing required data');
+
+    if (!mounted) return;
+
+    setState(() {
+      errorMessage = message;
+      currentPrediction = null;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$contextMessage: $message'),
+        backgroundColor: Colors.red,
+      ),
+    );
+
+    debugPrint('Error: $contextMessage - $error');
+  }
+
+  void _handleRefresh() {
+    if (selectedCompany != null) {
+      _fetchCompanyPredictionWithRetry(selectedCompany!);
+    } else {
+      _initializeData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(top: defaultPadding),
-      padding: EdgeInsets.all(defaultPadding),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4FAFF),
-        // border: Border.all(width: 2, color: const Color(0xFFF4FAFF)),
-        borderRadius: const BorderRadius.all(
-          Radius.circular(defaultPadding),
-        ),
+        color: Color(0xFFF4FAFF),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
-          SearchField(
-            companies: watchlist,
-            selectedCompany: selectedCompany,
-            onChanged: (symbol) {
-              if (symbol != null) fetchCompanyPrediction(symbol);
-            },
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompanyDropdown(),
+              ),
+              IconButton(
+                icon: Icon(Icons.refresh),
+                onPressed: _handleRefresh,
+              ),
+            ],
           ),
-          SizedBox(height: defaultPadding),
-          if (isLoading)
+          SizedBox(height: 16),
+          _buildContent(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompanyDropdown() {
+    return InputDecorator(
+      decoration: InputDecoration(
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        fillColor: Color.fromARGB(255, 223, 223, 223),
+        filled: true,
+        border: OutlineInputBorder(
+          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: selectedCompany,
+          hint: Text('Select company'),
+          items: watchlist.map((company) {
+            return DropdownMenuItem<String>(
+              value: company,
+              child: Text(company),
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value != null) {
+              _fetchCompanyPredictionWithRetry(value);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    if (isLoading) {
+      return _buildLoadingState();
+    }
+    if (errorMessage != null) {
+      return _buildErrorState();
+    }
+    if (currentPrediction != null) {
+      return buildPredictionDetails(currentPrediction!, context);
+    }
+    if (watchlist.isEmpty) {
+      return _buildEmptyState();
+    }
+    return _buildNoDataState();
+  }
+
+  Widget _buildLoadingState() {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          CircularProgressIndicator(),
+          if (_retryCount > 0)
             Padding(
-              padding: EdgeInsets.symmetric(vertical: defaultPadding),
-              child: CircularProgressIndicator(),
-            )
-          else if (currentPrediction != null)
-            buildPredictionDetails(currentPrediction!, context)
-          else if (selectedCompany != null)
-            Text('No prediction data available'),
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                'Retrying... ($_retryCount/$_maxRetries)',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red, size: 40),
+          SizedBox(height: 8),
+          Text(
+            errorMessage ?? 'An error occurred',
+            style: TextStyle(color: Colors.red),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: _handleRefresh,
+            child: Text('Try Again'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          Icon(Icons.info_outline, color: Colors.blue, size: 40),
+          SizedBox(height: 8),
+          Text('No companies in your watchlist'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoDataState() {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          Icon(Icons.info_outline, color: Colors.orange, size: 40),
+          SizedBox(height: 8),
+          Text('No prediction data available'),
         ],
       ),
     );
   }
 }
 
+Widget buildErrorCard(String message) {
+  return Card(
+    child: Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Icon(Icons.error, color: Colors.red),
+          Text(message),
+        ],
+      ),
+    ),
+  );
+}
+
 Widget buildPredictionDetails(
   AgriculturalPrediction prediction,
   BuildContext context,
 ) {
+  Object safeToStringFixed(dynamic value, [int fractionDigits = 2]) {
+    if (value == null) return 'N/A';
+    if (value is num) return value.toStringAsFixed(fractionDigits);
+    if (prediction == null || prediction.symbol == null) {
+      return buildErrorCard('Invalid prediction data');
+    }
+
+    if (value is String) {
+      final parsed = double.tryParse(value);
+      return parsed?.toStringAsFixed(fractionDigits) ?? 'N/A';
+    }
+    return 'N/A';
+  }
+
   // Show error state if prediction indicates an error
   final isErrorState = prediction.symbol == 'ERROR';
 
@@ -168,7 +354,7 @@ Widget buildPredictionDetails(
             else ...[
               buildInfoRow(
                 'Current Prediction',
-                'ZiG ${prediction.currentPrediction.toStringAsFixed(2)}',
+                'ZiG ${safeToStringFixed(prediction.currentPrediction)}',
                 valueStyle: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).primaryColor,
@@ -176,7 +362,7 @@ Widget buildPredictionDetails(
               ),
               buildInfoRow(
                 'Base Price',
-                'ZiG ${prediction.basePrice.toStringAsFixed(2)}',
+                'ZiG ${safeToStringFixed(prediction.basePrice)}',
               ),
               buildInfoRow(
                 'Climate Adjustment',
@@ -212,7 +398,7 @@ Widget buildPredictionDetails(
                 context,
                 title: 'Temperature',
                 value:
-                    '${prediction.stressFactors.temperature.value?.toStringAsFixed(2) ?? 'N/A'}°C',
+                    '${safeToStringFixed(prediction.stressFactors.temperature.value)}°C',
                 score: prediction.stressFactors.temperature.stressScore,
                 range: prediction.stressFactors.temperature.optimalRange,
               ),
@@ -221,7 +407,7 @@ Widget buildPredictionDetails(
                 context,
                 title: 'Rainfall',
                 value:
-                    '${prediction.stressFactors.rainfall.value?.toStringAsFixed(2) ?? 'N/A'}mm',
+                    '${safeToStringFixed(prediction.stressFactors.rainfall.value)}mm',
                 score: prediction.stressFactors.rainfall.stressScore,
                 threshold: prediction.stressFactors.rainfall.criticalThreshold,
               ),
