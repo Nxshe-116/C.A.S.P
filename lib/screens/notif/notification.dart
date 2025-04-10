@@ -26,6 +26,7 @@ class _NotifictionScreenState extends State<NotifictionScreen> {
     return FirebaseFirestore.instance
         .collection('notifications')
         .where('userId', whereIn: [widget.uid, 'admin']) // Filter by userId
+        .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Notifications.fromMap(doc.data(), doc.id))
@@ -56,6 +57,7 @@ class _NotifictionScreenState extends State<NotifictionScreen> {
                   }
 
                   if (snapshot.hasError) {
+                    print('Error: ${snapshot.error}');
                     return Center(child: Text('Error: ${snapshot.error}'));
                   }
 

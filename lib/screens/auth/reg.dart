@@ -129,7 +129,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               flex: 4,
               child: Center(
                 child: Text(
-                  'AI-Powered Insights \n for Agricultural Markets.',
+                  'Predicting Climate Resilient Stock Prices',
                   style: TextStyle(
                       fontSize: 55,
                       fontWeight: FontWeight.bold,

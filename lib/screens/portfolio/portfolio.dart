@@ -1,9 +1,12 @@
+// ignore_for_file: unnecessary_null_comparison
+
 import 'package:admin/constants.dart';
 import 'package:admin/models/tickers.dart';
 import 'package:admin/screens/dashboard/components/header.dart';
 import 'package:admin/services/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 class PortfolioScreen extends StatefulWidget {
   final String name;
@@ -74,8 +77,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             actualPrice: null,
             mse: 0, // Will be updated from real-time data if available
             rmse: 0, // Will be updated from real-time data if available
-            mae: 0, // Will be updated from real-time data if available
-            rSquared: 0, // Will be updated from real-time data if available
+            mle: 0, // Will be updated when we have actual prices
+            ksStatistic: 0, // Will be updated when we have actual prices
           );
         }).toList();
 
@@ -110,11 +113,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               stocks[index] = stocks[index].copyWith(
                 currentPrediction: realTimePrediction.currentPrediction,
                 previousPrediction: realTimePrediction.previousPrediction,
-                // These metrics would come from a different endpoint if available
-                // mse: 0, // Placeholder - update if you have this data
-                // rmse: 0, // Placeholder - update if you have this data
-                // mae: 0, // Placeholder - update if you have this data
-                // rSquared: 0, // Placeholder - update if you have this data
               );
             }
           });
@@ -125,6 +123,87 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         errorMessage = 'Error fetching real-time data: $e';
       });
     }
+  }
+
+  // Calculate Root Mean Square Error (RMSE)
+  double calculateRMSE(List<double> predictions, List<double> actuals) {
+    if (predictions.length != actuals.length || predictions.isEmpty) {
+      return 0;
+    }
+
+    double sum = 0;
+    for (int i = 0; i < predictions.length; i++) {
+      sum += math.pow(predictions[i] - actuals[i], 2);
+    }
+    return math.sqrt(sum / predictions.length);
+  }
+
+  // Calculate Maximum Likelihood Estimation (MLE) assuming normal distribution
+  double calculateMLE(List<double> errors) {
+    if (errors.isEmpty) return 0;
+
+    final n = errors.length;
+    final variance = errors.map((e) => e * e).reduce((a, b) => a + b) / n;
+
+    // Log likelihood for normal distribution
+    return -n / 2 * math.log(2 * math.pi * variance) -
+        (1 / (2 * variance)) * errors.map((e) => e * e).reduce((a, b) => a + b);
+  }
+
+  // Kolmogorov-Smirnov Test
+  double calculateKSStatistic(List<double> predictions, List<double> actuals) {
+    if (predictions.length != actuals.length || predictions.isEmpty) {
+      return 0;
+    }
+
+    // Sort the data
+    predictions.sort();
+    actuals.sort();
+
+    final n = predictions.length;
+    double maxDiff = 0;
+
+    for (int i = 0; i < n; i++) {
+      final ecdfPred = (i + 1) / n;
+      final ecdfActual = (actuals.indexOf(predictions[i]) + 1) / n;
+      final diff = (ecdfPred - ecdfActual).abs();
+
+      if (diff > maxDiff) {
+        maxDiff = diff;
+      }
+    }
+
+    return maxDiff;
+  }
+
+  void updateStockMetrics(StockValidation stock) {
+    if (stock.actualPrice == null || stock.currentPrediction == null) return;
+
+    // For demonstration, we'll use a small window of recent predictions
+    // In a real app, you'd want to fetch historical predictions
+    final predictions = [stock.currentPrediction];
+    final actuals = [stock.actualPrice!];
+
+    final errors = predictions
+        .asMap()
+        .entries
+        .map((e) => actuals[e.key] - e.value)
+        .toList();
+
+    final rmse = calculateRMSE(predictions, actuals);
+    final mle = calculateMLE(errors);
+    final ksStatistic = calculateKSStatistic(predictions, actuals);
+
+    setState(() {
+      final index = stocks.indexWhere((s) => s.symbol == stock.symbol);
+      if (index != -1) {
+        stocks[index] = stocks[index].copyWith(
+          rmse: rmse,
+          mle: mle,
+          ksStatistic: ksStatistic,
+        );
+      }
+    });
   }
 
   @override
@@ -264,7 +343,11 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
           onChanged: (value) {
             setState(() {
               if (value.isNotEmpty) {
-                stock.actualPrice = double.tryParse(value);
+                final newPrice = double.tryParse(value);
+                if (newPrice != null) {
+                  stock.actualPrice = newPrice;
+                  updateStockMetrics(stock);
+                }
               } else {
                 stock.actualPrice = null;
               }
@@ -341,15 +424,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             if (stock.previousPrediction != null)
               buildMetricChip('Previous',
                   '\$${stock.previousPrediction!.toStringAsFixed(2)}'),
-            // Only show metrics if they have non-zero values
-            if (stock.mse != 0)
-              buildMetricChip('MSE', stock.mse.toStringAsFixed(2)),
             if (stock.rmse != 0)
-              buildMetricChip('RMSE', stock.rmse.toStringAsFixed(2)),
-            if (stock.mae != 0)
-              buildMetricChip('MAE', stock.mae.toStringAsFixed(2)),
-            if (stock.rSquared != 0)
-              buildMetricChip('R²', stock.rSquared.toStringAsFixed(2)),
+              buildMetricChip('RMSE', stock.rmse.toStringAsFixed(4)),
+            if (stock.mle != 0)
+              buildMetricChip('MLE', stock.mle.toStringAsFixed(4)),
+            if (stock.ksStatistic != 0)
+              buildMetricChip('KS Stat', stock.ksStatistic.toStringAsFixed(4)),
           ],
         ),
       ],
@@ -402,18 +482,22 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     }
 
     // Calculate average metrics
-    final avgMse =
-        stocksWithActualPrices.map((s) => s.mse).reduce((a, b) => a + b) /
-            stocksWithActualPrices.length;
     final avgRmse =
         stocksWithActualPrices.map((s) => s.rmse).reduce((a, b) => a + b) /
             stocksWithActualPrices.length;
-    final avgMae =
-        stocksWithActualPrices.map((s) => s.mae).reduce((a, b) => a + b) /
+    final avgMle =
+        stocksWithActualPrices.map((s) => s.mle).reduce((a, b) => a + b) /
             stocksWithActualPrices.length;
-    final avgRSquared =
-        stocksWithActualPrices.map((s) => s.rSquared).reduce((a, b) => a + b) /
-            stocksWithActualPrices.length;
+    final avgKs = stocksWithActualPrices
+            .map((s) => s.ksStatistic)
+            .reduce((a, b) => a + b) /
+        stocksWithActualPrices.length;
+
+    // Calculate average stock price for context
+    final avgStockPrice = stocksWithActualPrices
+            .map((s) => s.actualPrice!)
+            .reduce((a, b) => a + b) /
+        stocksWithActualPrices.length;
 
     return Card(
       color: Color(0xFFF4FAFF),
@@ -427,7 +511,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         child: Column(
           children: [
             Text(
-              'Average Model Performance',
+              'Model Performance Evaluation',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             SizedBox(height: 16),
@@ -436,17 +520,148 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               runSpacing: 16,
               alignment: WrapAlignment.spaceEvenly,
               children: [
-                buildSummaryMetric(
-                    'Mean Squared Error', avgMse.toStringAsFixed(2)),
-                buildSummaryMetric(
-                    'Root Mean Squared Error', avgRmse.toStringAsFixed(2)),
-                buildSummaryMetric(
-                    'Mean Absolute Error', avgMae.toStringAsFixed(2)),
-                buildSummaryMetric('R Squared', avgRSquared.toStringAsFixed(2)),
+                _buildMetricWithInterpretation(
+                  'RMSE',
+                  avgRmse.toStringAsFixed(4),
+                  _interpretRMSE(avgRmse, avgStockPrice),
+                  Icons.show_chart,
+                ),
+                _buildMetricWithInterpretation(
+                  'MLE',
+                  avgMle.toStringAsFixed(4),
+                  _interpretMLE(avgMle),
+                  Icons.psychology,
+                ),
+                _buildMetricWithInterpretation(
+                  'KS Stat',
+                  avgKs.toStringAsFixed(4),
+                  _interpretKS(avgKs),
+                  Icons.compare_arrows,
+                ),
               ],
             ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  'Key to Interpretation:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            _buildInterpretationGuide(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMetricWithInterpretation(
+      String title, String value, String interpretation, IconData icon) {
+    return Container(
+      width: 180,
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: primaryColor),
+              SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8),
+          Text(
+            interpretation,
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _interpretRMSE(double rmse, double avgPrice) {
+    final percentage = (rmse / avgPrice) * 100;
+    if (percentage < 1) return 'Excellent accuracy\n(Error <1% of price)';
+    if (percentage < 3) return 'Good accuracy\n(Error 1-3% of price)';
+    if (percentage < 5) return 'Moderate accuracy\n(Error 3-5% of price)';
+    return 'Low accuracy\n(Error >5% of price)';
+  }
+
+  String _interpretMLE(double mle) {
+    // Since MLE is typically negative, closer to 0 is better
+    if (mle > -5) return 'Excellent model fit';
+    if (mle > -10) return 'Good model fit';
+    if (mle > -20) return 'Moderate model fit';
+    return 'Poor model fit';
+  }
+
+  String _interpretKS(double ks) {
+    if (ks < 0.1) return 'Excellent distribution match';
+    if (ks < 0.2) return 'Good distribution match';
+    if (ks < 0.3) return 'Moderate distribution difference';
+    return 'Significant distribution difference';
+  }
+
+  Widget _buildInterpretationGuide() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildGuideItem('RMSE (Root Mean Square Error)',
+            'Measures average prediction error. Lower is better.'),
+        _buildGuideItem('MLE (Maximum Likelihood Estimate)',
+            'Measures how well model explains observed data. Closer to 0 is better.'),
+        _buildGuideItem('KS Stat (Kolmogorov-Smirnov)',
+            'Measures difference between predicted and actual distributions. Lower is better.'),
+        SizedBox(height: 8),
+        Text(
+          'Note: Metrics are calculated across all stocks with entered prices.',
+          style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGuideItem(String title, String description) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(description, style: TextStyle(fontSize: 12)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -463,20 +678,19 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       ],
     );
   }
-
 }
 
 class StockValidation {
   final String symbol;
   final String name;
   final double currentPrediction;
-  final double? previousPrediction; // Add this field
+  final double? previousPrediction;
   double? actualPrice;
 
-  final double mse;
   final double rmse;
-  final double mae;
-  final double rSquared;
+  final double mle;
+  final double mse;
+  final double ksStatistic;
 
   StockValidation({
     required this.symbol,
@@ -484,10 +698,10 @@ class StockValidation {
     required this.currentPrediction,
     this.previousPrediction,
     this.actualPrice,
-    required this.mse,
     required this.rmse,
-    required this.mae,
-    required this.rSquared,
+    required this.mle,
+    required this.ksStatistic,
+    required this.mse,
   });
 
   StockValidation copyWith({
@@ -496,11 +710,10 @@ class StockValidation {
     double? currentPrediction,
     double? previousPrediction,
     double? actualPrice,
-    // Remove these if not using metrics:
-    // double? mse,
-    // double? rmse,
-    // double? mae,
-    // double? rSquared,
+    double? rmse,
+    double? mle,
+    double? mse,
+    double? ksStatistic,
   }) {
     return StockValidation(
       symbol: symbol ?? this.symbol,
@@ -508,13 +721,10 @@ class StockValidation {
       currentPrediction: currentPrediction ?? this.currentPrediction,
       previousPrediction: previousPrediction ?? this.previousPrediction,
       actualPrice: actualPrice ?? this.actualPrice,
-      // Remove these if not using metrics:
-      mse: mse,
-      rmse: rmse,
-      mae: mae,
-      rSquared: rSquared,
+      rmse: rmse ?? this.rmse,
+      mle: mle ?? this.mle,
+      ksStatistic: ksStatistic ?? this.ksStatistic,
+      mse: mse ?? this.mse,
     );
   }
 }
-
-

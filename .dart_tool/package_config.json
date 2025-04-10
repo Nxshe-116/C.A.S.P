@@ -482,10 +482,10 @@
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2025-03-28T20:17:26.549634Z",
+  "generated": "2025-04-10T10:43:42.047316Z",
   "generator": "pub",
-  "generatorVersion": "3.7.0",
+  "generatorVersion": "3.7.2",
   "flutterRoot": "file:///Users/nashechagumaira/development/flutter",
-  "flutterVersion": "3.29.1",
+  "flutterVersion": "3.29.2",
   "pubCache": "file:///Users/nashechagumaira/.pub-cache"
 }
