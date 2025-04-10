@@ -8,6 +8,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+import 'package:shimmer/shimmer.dart';
+
 class PortfolioScreen extends StatefulWidget {
   final String name;
   final String lastName;
@@ -221,32 +223,33 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             ),
             SizedBox(height: defaultPadding),
             if (isLoading)
-              Center(child: CircularProgressIndicator())
-            else if (errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  errorMessage!,
-                  style: TextStyle(color: Colors.red),
-                ),
-              )
-            else if (stocks.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'No companies selected in your watchlist',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              )
-            else ...[
-              buildSectionHeader('Your watchlist'),
-              ...stocks
-                  .map((stock) => buildStockValidationCard(stock))
-                  .toList(),
-              SizedBox(height: defaultPadding),
-              buildSectionHeader('Validation Summary'),
-              buildValidationSummary(),
-            ],
+              if (isLoading)
+                buildShimmerLoading()
+              else if (errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    errorMessage!,
+                    style: TextStyle(color: Colors.red),
+                  ),
+                )
+              else if (stocks.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'No companies selected in your watchlist',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                )
+              else ...[
+                buildSectionHeader('Your watchlist'),
+                ...stocks
+                    .map((stock) => buildStockValidationCard(stock))
+                    .toList(),
+                SizedBox(height: defaultPadding),
+                buildSectionHeader('Validation Summary'),
+                buildValidationSummary(),
+              ],
           ],
         ),
       ),
@@ -678,6 +681,134 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       ],
     );
   }
+}
+
+Widget buildShimmerLoading() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: Column(
+      children: [
+        // Header shimmer
+        Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            width: 200,
+            height: 30,
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: defaultPadding),
+
+        // Section header shimmer
+        Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            width: 150,
+            height: 20,
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: 8),
+
+        // Stock cards shimmer
+        Column(
+          children: List.generate(
+              3,
+              (index) => Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(
+                        padding: EdgeInsets.all(16),
+                        height: 180,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                                width: 100, height: 20, color: Colors.white),
+                            SizedBox(height: 8),
+                            Container(
+                                width: 150, height: 16, color: Colors.white),
+                            SizedBox(height: 16),
+                            Container(
+                                width: double.infinity,
+                                height: 40,
+                                color: Colors.white),
+                            SizedBox(height: 8),
+                            Container(
+                                width: 120, height: 16, color: Colors.white),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )),
+        ),
+
+        SizedBox(height: defaultPadding),
+
+        // Section header shimmer
+        Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            width: 150,
+            height: 20,
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: 8),
+
+        // Summary shimmer
+        Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            padding: EdgeInsets.all(16),
+            height: 200,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                Container(width: 200, height: 20, color: Colors.white),
+                SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(
+                      3,
+                      (index) => Container(
+                            width: 100,
+                            height: 80,
+                            color: Colors.white,
+                          )),
+                ),
+                SizedBox(height: 16),
+                Column(
+                  children: List.generate(
+                      4,
+                      (index) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Container(
+                                width: double.infinity,
+                                height: 12,
+                                color: Colors.white),
+                          )),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class StockValidation {
