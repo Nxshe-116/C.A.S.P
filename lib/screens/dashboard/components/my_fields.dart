@@ -209,6 +209,7 @@ class _FileInfoCardGridViewState extends State<FileInfoCardGridView> {
         final realTimeInfo = realTimeData[stock];
 
         return StockInfoCard(
+          uid: widget.userId,
           info: stock,
           realTimeData: realTimeInfo,
           isLoading: realTimeInfo == null,

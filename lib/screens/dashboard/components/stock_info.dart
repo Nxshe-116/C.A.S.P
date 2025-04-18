@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use, unnecessary_null_comparison
 
 import 'package:admin/models/predictions.dart';
+import 'package:admin/models/tickers.dart';
 import 'package:admin/screens/dashboard/components/date_formatter.dart';
 import 'package:admin/services/services.dart';
 import 'package:card_swiper/card_swiper.dart';
@@ -345,7 +346,7 @@ Widget buildPredictionDetails(
           context: context,
           title: isErrorState ? 'Error' : 'Price Analysis',
           children: [
-            buildInfoRow('Symbol', prediction.symbol),
+            buildInfoRow('Symbol', generateTicker(prediction.symbol)),
             if (isErrorState)
               Text(
                 'Error loading prediction data',
