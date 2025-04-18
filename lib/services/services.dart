@@ -4,6 +4,7 @@ import 'package:admin/models/climate.dart';
 import 'package:admin/models/company.dart';
 import 'package:admin/models/notifications.dart';
 import 'package:admin/models/predictions.dart';
+ 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -198,32 +199,18 @@ class ApiService {
     }
   }
 
-  Future<List<HistoricalPrediction>> fetchHistoricalPredictions(
-      String symbol) async {
-    try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/api/model/history/$symbol'),
-          )
-          .timeout(timeoutDuration);
-
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
-        if (jsonResponse['success'] == true) {
-          final List<dynamic> data =
-              jsonResponse['data']['historical_predictions'];
-          return data
-              .map((json) => HistoricalPrediction.fromJson(json))
-              .toList();
-        }
-        throw Exception('API returned success: false');
-      }
-      throw Exception('Failed to load history: ${response.statusCode}');
-    } catch (e) {
-      debugPrint('Error fetching historical predictions: $e');
-      rethrow;
-    }
+// For use in service classes that just return data
+Future<HistoricalPredictionModel> fetchHistoricalPredictions(String symbol) async {
+  final response = await http.get(Uri.parse('$baseUrl/api/model/history/$symbol'));
+  final json = jsonDecode(response.body);
+  
+  if (response.statusCode == 200 && json['success']) {
+    return HistoricalPredictionModel.fromJson(json['data']);
+  } else {
+    throw Exception('Failed to load history');
   }
+}
+
 
   Future<List<WeeklyPrediction>> fetchWeeklyPredictions(String symbol) async {
     try {
@@ -316,6 +303,26 @@ class ApiService {
         : companyName.toLowerCase();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     return '${prefix}$timestamp';
+  }
+
+  Future<HistoricalPredictionModel?> fetchHistory(String symbol) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/history/$symbol'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success']) {
+          return HistoricalPredictionModel.fromJson(data['data']);
+        } else {
+          print("API returned failure: ${data['error']}");
+        }
+      } else {
+        print("Server error: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Fetch error: $e");
+    }
+    return null;
   }
 
   Future<void> addCompaniesToUser(String uid, List<Company> companies) async {

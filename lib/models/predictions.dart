@@ -315,3 +315,50 @@ class ClimateReport {
     );
   }
 }
+
+class HistoricalPredictionModel {
+  final String symbol;
+  final List<PredictionEntry> historicalPredictions;
+
+  HistoricalPredictionModel({
+    required this.symbol,
+    required this.historicalPredictions,
+  });
+
+  factory HistoricalPredictionModel.fromJson(Map<String, dynamic> json) {
+    return HistoricalPredictionModel(
+      symbol: json['symbol'],
+      historicalPredictions: (json['historical_predictions'] as List)
+          .map((item) => PredictionEntry.fromJson(item))
+          .toList(),
+    );
+  }
+}
+
+class PredictionEntry {
+  final String date;
+  final double predictedClose;
+  final double actualClose;
+
+  PredictionEntry({
+    required this.date,
+    required this.predictedClose,
+    required this.actualClose,
+  });
+
+  factory PredictionEntry.fromJson(Map<String, dynamic> json) {
+    return PredictionEntry(
+      date: json['date'],
+      predictedClose: (json['predicted_close'] as num).toDouble(),
+      actualClose: (json['actual_close'] as num).toDouble(),
+    );
+  }
+
+    Map<String, dynamic> toJson() {
+    return {
+      'date': date,
+      'predicted_close': predictedClose,
+      'actual_close': actualClose,
+    };
+  }
+}

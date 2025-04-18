@@ -113,7 +113,7 @@ class ProfileCard extends StatelessWidget {
               } else if (value == 'settings') {
                 _navigateToSettings(context);
               } else if (value == 'logout') {
-                logout(context);
+                confirmLogout(context);
               }
             },
             itemBuilder: (BuildContext context) {
@@ -177,27 +177,75 @@ class ProfileCard extends StatelessWidget {
   }
 
   void confirmLogout(BuildContext context) {
-    showDialog(
+    showGeneralDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Sign Out"),
-          content: Text("Are you sure you want to sign out?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(), // Close dialog
-              child: Text("Cancel"),
+      barrierDismissible: true,
+      barrierLabel: "Logout",
+      pageBuilder: (_, __, ___) => Align(
+        alignment: Alignment.topCenter,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 100.0),
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 320, // Fixed width
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Sign Out",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    "Are you sure you want to sign out?",
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          logout(context);
+                        },
+                        child: Text(
+                          "Sign Out",
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                confirmLogout(context); // Call logout function
-              },
-              child: Text("Sign Out", style: TextStyle(color: Colors.red)),
-            ),
-          ],
+          ),
+        ),
+      ),
+      transitionBuilder: (_, anim, __, child) {
+        return FadeTransition(
+          opacity: anim,
+          child: child,
         );
       },
+      transitionDuration: Duration(milliseconds: 250),
     );
   }
 
@@ -205,20 +253,20 @@ class ProfileCard extends StatelessWidget {
     try {
       await FirebaseAuth.instance.signOut();
       final prefs = await SharedPreferences.getInstance();
-      await prefs.clear(); 
+      await prefs.clear();
 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-            'User logged out.',
-            style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
-          ),
-          backgroundColor: Colors.white, // Change background color
-          duration: Duration(seconds: 3), // Set duration
-          behavior: SnackBarBehavior.floating, // Make it floating
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10), // Add rounded corners
-          ),
-        ));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          'User logged out.',
+          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white, // Change background color
+        duration: Duration(seconds: 3), // Set duration
+        behavior: SnackBarBehavior.floating, // Make it floating
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10), // Add rounded corners
+        ),
+      ));
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => SignInScreen()),
