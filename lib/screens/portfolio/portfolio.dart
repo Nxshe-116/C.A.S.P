@@ -223,33 +223,34 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             ),
             SizedBox(height: defaultPadding),
             if (isLoading)
-              if (isLoading)
-                buildShimmerLoading()
-              else if (errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    errorMessage!,
-                    style: TextStyle(color: Colors.red),
-                  ),
-                )
-              else if (stocks.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'No companies selected in your watchlist',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                )
-              else ...[
-                buildSectionHeader('Your watchlist'),
-                ...stocks
-                    .map((stock) => buildStockValidationCard(stock))
-                    .toList(),
-                SizedBox(height: defaultPadding),
-                buildSectionHeader('Validation Summary'),
-                buildValidationSummary(),
-              ],
+              SingleChildScrollView(
+                child: buildShimmerLoading(),
+              )
+            else if (errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  errorMessage!,
+                  style: TextStyle(color: Colors.red),
+                ),
+              )
+            else if (stocks.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'No companies selected in your watchlist',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
+            else ...[
+              buildSectionHeader('Your watchlist'),
+              ...stocks
+                  .map((stock) => buildStockValidationCard(stock))
+                  .toList(),
+              SizedBox(height: defaultPadding),
+              buildSectionHeader('Validation Summary'),
+              buildValidationSummary(),
+            ],
           ],
         ),
       ),
@@ -484,7 +485,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       );
     }
 
-    // Calculate average metrics
+     
     final avgRmse =
         stocksWithActualPrices.map((s) => s.rmse).reduce((a, b) => a + b) /
             stocksWithActualPrices.length;

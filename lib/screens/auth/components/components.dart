@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:admin/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -142,47 +144,47 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
 class CustomButton extends StatelessWidget {
   final String title;
   final VoidCallback onTap;
+  final bool isLoading; // Add this parameter to control loading state
+
   const CustomButton({
     super.key,
     required this.title,
     required this.onTap,
+    this.isLoading = false, // Default to false
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap, // Disable tap when loading
       child: Container(
         decoration: BoxDecoration(
-          // border: Border.all(
-          //   color: Colors.black,
-          //   width: 0,
-          //   style: BorderStyle.solid,
-          // ),
-          color: primaryColor,
-          borderRadius: BorderRadius.all(
+          color: isLoading ? primaryColor.withOpacity(0.7) : primaryColor,
+          borderRadius: const BorderRadius.all(
             Radius.circular(10.0),
           ),
-          // boxShadow: [
-          //   BoxShadow(
-          //     color: secondaryColor,
-          //     spreadRadius: 0,
-          //     blurRadius: 0,
-          //     offset: Offset(0, 5),
-          //   ),
-          // ],
         ),
         margin: EdgeInsets.only(top: 40, left: 20.0, right: 20.0),
         width: 900.w,
         height: 45.0,
         child: Center(
-          child: Text(
-            title,
-            style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 16.0,
-                color: Colors.white),
-          ),
+          child: isLoading
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16.0,
+                    color: Colors.white,
+                  ),
+                ),
         ),
       ),
     );

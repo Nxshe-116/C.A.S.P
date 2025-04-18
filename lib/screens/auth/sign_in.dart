@@ -17,7 +17,10 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController controller = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  bool isLoading = false;
   //final _formKey = GlobalKey<FormState>();
+  final formKey =
+      GlobalKey<FormState>(); // Add this at the top of your _SignInScreenState
   final FocusNode emailFocusNode = FocusNode(); // Add FocusNode for email
   final FocusNode passwordFocusNode = FocusNode(); // Add FocusNode for password
 
@@ -29,7 +32,9 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   Future<void> signIn() async {
-    // if (_formKey.currentState!.validate()) {
+    setState(() {
+      isLoading = true; // Start loading
+    });
     try {
       final email = controller.text.trim();
       final password = passwordController.text.trim();
@@ -81,9 +86,9 @@ class _SignInScreenState extends State<SignInScreen> {
           .collection('users')
           .doc(userCredential.user!.uid)
           .get();
-    print('User UID: ${userCredential.user!.uid}');
-    print('User Document Exists: ${userDoc.exists}');
-    print('User Data: ${userDoc.data()}');
+      print('User UID: ${userCredential.user!.uid}');
+      print('User Document Exists: ${userDoc.exists}');
+      print('User Data: ${userDoc.data()}');
 
       // Check if user document exists and has data
       if (!userDoc.exists || userDoc.data() == null) {
@@ -178,8 +183,13 @@ class _SignInScreenState extends State<SignInScreen> {
           borderRadius: BorderRadius.circular(10), // Add rounded corners
         ),
       ));
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false; // Stop loading in any case
+        });
+      }
     }
-    // }
   }
 
   @override
@@ -250,9 +260,8 @@ class _SignInScreenState extends State<SignInScreen> {
                               leadingIcon: Icons.lock),
                           CustomButton(
                             title: "Sign In",
-                            onTap: () {
-                              signIn();
-                            },
+                            onTap: () => signIn(),
+                            isLoading: isLoading,
                           ),
                           SizedBox(height: 25.h),
                           Row(
