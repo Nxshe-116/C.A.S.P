@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, dead_code
+// ignore_for_file: deprecated_member_use
 
 import 'dart:math';
 
@@ -501,164 +501,202 @@ class _ChartWidgetState extends State<ChartWidget> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 600,
-      child: Column(
-        children: [
-          // Prediction Text Display
-          Container(
-            height: 100,
-            child: Center(
-                child: widget.stock == null
-                    ? Text(
-                        'No stock selected',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      )
-                    : isLoading
-                        ? _buildShimmerChart()
-                        : errorMessage != null
-                            ? Text(
-                                'Error: $errorMessage',
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red),
-                              )
-                            : Container(
-                                margin: EdgeInsets.symmetric(
+      height: 800,
+      child: Column(children: [
+        // Prediction Text Display
+        Container(
+          height: 100,
+          child: Center(
+              child: widget.stock == null
+                  ? Text(
+                      'No stock selected',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    )
+                  : isLoading
+                      ? _buildShimmerChart()
+                      : errorMessage != null
+                          ? Text(
+                              'Error: $errorMessage',
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red),
+                            )
+                          : Container(
+                              margin: EdgeInsets.symmetric(
+                                  horizontal: 16.0, vertical: 8.0),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF4FAFF),
+                                borderRadius: BorderRadius.circular(12.0),
+                              ),
+                              child: ListTile(
+                                contentPadding: EdgeInsets.symmetric(
                                     horizontal: 16.0, vertical: 8.0),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF4FAFF),
+                                leading: Icon(
+                                  Icons.thermostat_auto, // Climate-related icon
+                                  color: displayClimateAdjustment
+                                      ? Theme.of(context).primaryColor
+                                      : Colors.grey[600],
+                                ),
+                                title: Text(
+                                  "Display Climate Adjustment",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w900,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.color,
+                                  ),
+                                ),
+                                trailing: Transform.scale(
+                                  scale: 0.6, // Slightly smaller switch
+                                  child: Switch.adaptive(
+                                    value: displayClimateAdjustment,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        displayClimateAdjustment = value;
+                                      });
+                                    },
+                                    activeColor: primaryColor,
+                                    thumbColor:
+                                        WidgetStateProperty.resolveWith<Color>(
+                                      (states) =>
+                                          states.contains(WidgetState.selected)
+                                              ? Colors.white
+                                              : Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12.0),
                                 ),
-                                child: ListTile(
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 16.0, vertical: 8.0),
-                                  leading: Icon(
-                                    Icons
-                                        .thermostat_auto, // Climate-related icon
-                                    color: displayClimateAdjustment
-                                        ? Theme.of(context).primaryColor
-                                        : Colors.grey[600],
-                                  ),
-                                  title: Text(
-                                    "Display Climate Adjustment",
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w900,
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.color,
-                                    ),
-                                  ),
-                                  trailing: Transform.scale(
-                                    scale: 0.6, // Slightly smaller switch
-                                    child: Switch.adaptive(
-                                      value: displayClimateAdjustment,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          displayClimateAdjustment = value;
-                                        });
-                                      },
-                                      activeColor: primaryColor,
-                                      thumbColor: MaterialStateProperty
-                                          .resolveWith<Color>(
-                                        (states) => states.contains(
-                                                MaterialState.selected)
-                                            ? Colors.white
-                                            : Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  onTap: () {
-                                    setState(() {
-                                      displayClimateAdjustment =
-                                          !displayClimateAdjustment;
-                                    });
-                                  },
-                                ),
-                              )),
-          ),
+                                onTap: () {
+                                  setState(() {
+                                    displayClimateAdjustment =
+                                        !displayClimateAdjustment;
+                                  });
+                                },
+                              ),
+                            )),
+        ),
 
-          // Chart Visualization
-          Expanded(
-            child: isLoading
-                ? _buildShimmerChart()
-                : chartData.isEmpty
-                    ? Center(child: Container())
-                    : SfCartesianChart(
-                        zoomPanBehavior: ZoomPanBehavior(
-                          enablePinching: true, // Enable pinch zoom
-                          enableDoubleTapZooming:
-                              true, // Enable double tap zoom
-                          enablePanning: true, // Enable panning
-                          enableSelectionZooming: true, // Enable selection zoom
-                          selectionRectBorderColor: Colors.red,
-                          selectionRectColor: Colors.grey.withOpacity(0.2),
-                        ),
-                        primaryXAxis: DateTimeAxis(
-                          title: AxisTitle(text: 'Weeks'),
-                          intervalType: DateTimeIntervalType.days,
-                          interval: 7,
-                          majorGridLines: const MajorGridLines(width: 0.15),
-                          dateFormat:
-                              DateFormat('MMM dd'), // Simple date format
-                        ),
-                        primaryYAxis: NumericAxis(
-                          minimum: 100, // Set lower bound
-                          maximum: 900, // Set upper bound
-                          interval: 100, // Gap between Y-axis labels
-                          numberFormat: NumberFormat.currency(
-                            symbol: 'ZiG ',
-                            decimalDigits: 2,
-                            customPattern: '¤#,##0.00',
-                          ),
-                        ),
-                        // palette: <Color>[
-                        //   Colors.teal,
-                        //   Colors.orange,
-                        //   Colors.brown
-                        // ],
-                        series: <CartesianSeries>[
-                          CandleSeries<ChartData, DateTime>(
-                            name: 'Stock Price',
-                            dataSource: chartData,
-                            xValueMapper: (ChartData data, _) => data.x,
-                            lowValueMapper: (ChartData data, _) => data.low,
-                            highValueMapper: (ChartData data, _) => data.high,
-                            openValueMapper: (ChartData data, _) => data.open,
-                            closeValueMapper: (ChartData data, _) => data.close,
-                            borderRadius: BorderRadius.all(Radius.circular(2)),
-                            width: 0.25,
-                            spacing: 0.2,
-                          ),
-                          if (displayClimateAdjustment)
-                            HiloOpenCloseSeries<ChartData, DateTime>(
-                              name: 'Stock Price',
-                              dataSource: chartData1,
-                              xValueMapper: (ChartData data, _) => data.x,
-                              lowValueMapper: (ChartData data, _) => data.low,
-                              highValueMapper: (ChartData data, _) => data.high,
-                              openValueMapper: (ChartData data, _) => data.open,
-                              closeValueMapper: (ChartData data, _) =>
-                                  data.close,
-                              bearColor: Colors
-                                  .lightGreenAccent, // Color when close < open
-                              bullColor: Colors.redAccent,
-                              // borderRadius: BorderRadius.all(Radius.circular(2)),
-                              //  width: 0.25,
-                              spacing: 0.2,
+        // Chart Visualization
+        Expanded(
+          child: Stack(
+            children: [
+              // Main chart content
+              isLoading
+                  ? _buildShimmerChart()
+                  : chartData.isEmpty
+                      ? Center(child: Container())
+                      : Padding(
+                          padding: const EdgeInsets.only(bottom: 40),
+                          child: SfCartesianChart(
+                            zoomPanBehavior: ZoomPanBehavior(
+                              enablePinching: true,
+                              enableDoubleTapZooming: true,
+                              enablePanning: true,
+                              enableSelectionZooming: true,
+                              selectionRectBorderColor: Colors.red,
+                              selectionRectColor: Colors.grey.withOpacity(0.2),
                             ),
-                        ],
-                        tooltipBehavior: TooltipBehavior(enable: true),
+                            primaryXAxis: DateTimeAxis(
+                              title: AxisTitle(text: 'Weeks'),
+                              intervalType: DateTimeIntervalType.days,
+                              interval: 7,
+                              majorGridLines: const MajorGridLines(width: 0.15),
+                              dateFormat: DateFormat('MMM dd'),
+                            ),
+                            primaryYAxis: NumericAxis(
+                              minimum: 100,
+                              maximum: 900,
+                              interval: 100,
+                              numberFormat: NumberFormat.currency(
+                                symbol: 'ZiG ',
+                                decimalDigits: 2,
+                                customPattern: '¤#,##0.00',
+                              ),
+                            ),
+                            series: <CartesianSeries>[
+                              CandleSeries<ChartData, DateTime>(
+                                name: 'Stock Price',
+                                dataSource: chartData,
+                                xValueMapper: (ChartData data, _) => data.x,
+                                lowValueMapper: (ChartData data, _) => data.low,
+                                highValueMapper: (ChartData data, _) =>
+                                    data.high,
+                                openValueMapper: (ChartData data, _) =>
+                                    data.open,
+                                closeValueMapper: (ChartData data, _) =>
+                                    data.close,
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(2)),
+                                width: 0.25,
+                                spacing: 0.2,
+                              ),
+                              if (displayClimateAdjustment)
+                                HiloOpenCloseSeries<ChartData, DateTime>(
+                                  name: 'Stock Price',
+                                  dataSource: chartData1,
+                                  xValueMapper: (ChartData data, _) => data.x,
+                                  lowValueMapper: (ChartData data, _) =>
+                                      data.low,
+                                  highValueMapper: (ChartData data, _) =>
+                                      data.high,
+                                  openValueMapper: (ChartData data, _) =>
+                                      data.open,
+                                  closeValueMapper: (ChartData data, _) =>
+                                      data.close,
+                                  bearColor: Colors
+                                      .lightGreenAccent, // Color when close < open
+                                  bullColor: Colors.redAccent,
+                                  // borderRadius: BorderRadius.all(Radius.circular(2)),
+                                  //  width: 0.25,
+                                  spacing: 0.2,
+                                ),
+                            ],
+                            tooltipBehavior: TooltipBehavior(enable: true),
+                          ),
+                        ),
+
+              // In the ChartWidget's build method, replace the Container with the button with this:
+              if (!isLoading && chartData.isNotEmpty)
+                Positioned(
+                  bottom: 16,
+                  right: 16,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      if (widget.stock != null) {
+                        showDetailedChart(context, widget.stock!);
+                      }
+                    },
+                    icon: Icon(Icons.zoom_in, color: Colors.white, size: 18),
+                    label: Text(
+                      "View detailed chart",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: Responsive.isMobile(context) ? 12 : 14,
                       ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: defaultPadding * 1.5,
+                        vertical: defaultPadding /
+                            (Responsive.isMobile(context) ? 2 : 1),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6.0),
+                      ),
+                    ),
+                  ),
+                )
+            ],
           ),
-        ],
-      ),
+        )
+      ]),
     );
   }
 }
@@ -1000,4 +1038,42 @@ void navigateToInvestScreen(BuildContext context) async {
       SnackBar(content: Text('Could not launch investment platform')),
     );
   }
+}
+
+void showDetailedChart(BuildContext context, String stockSymbol) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.all(16),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.8,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Detailed Chart for $stockSymbol",
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
