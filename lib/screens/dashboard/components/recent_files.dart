@@ -1,8 +1,12 @@
 // ignore_for_file: deprecated_member_use, dead_code
 
+import 'dart:math';
+
+import 'package:admin/models/company.dart';
 import 'package:admin/models/tickers.dart';
 import 'package:admin/responsive.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:admin/models/predictions.dart'; // Ensure this import is correct
@@ -10,6 +14,7 @@ import 'package:admin/services/services.dart'; // Ensure this import is correct
 import 'package:admin/constants.dart';
 import 'package:syncfusion_flutter_charts/charts.dart'; // Ensure this import is correct
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RecentFiles extends StatefulWidget {
   final String userId;
@@ -27,6 +32,9 @@ class _RecentFilesState extends State<RecentFiles> {
   final ApiService apiService = ApiService();
   List<String> watchlist = [];
   late Future<Map<String, Prediction>> predictionsFuture;
+  List<PredictionEntry> historicalData = [];
+  String? errorMessage;
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -240,6 +248,7 @@ class _RecentFilesState extends State<RecentFiles> {
                                         }
                                       },
                                       uid: widget.userId,
+                                      //F   info: '',
                                     ),
                                   );
                                 },
@@ -277,7 +286,7 @@ class _RecentFilesState extends State<RecentFiles> {
   }
 }
 
-class StockListTile extends StatelessWidget {
+class StockListTile extends StatefulWidget {
   final String stockName, stockTicker, uid;
   final Prediction prediction;
   final VoidCallback press;
@@ -290,7 +299,63 @@ class StockListTile extends StatelessWidget {
     // required this.priceChange,
     required this.press,
     required this.prediction,
+    //  required this.info,
   }) : super(key: key);
+
+  @override
+  State<StockListTile> createState() => _StockListTileState();
+}
+
+class _StockListTileState extends State<StockListTile> {
+  List<PredictionEntry> historicalData = [];
+  String? errorMessage;
+  bool isLoading = true;
+  int _historyRetryCount = 0;
+  final int _maxRetries = 3;
+  final ApiService apiService = ApiService();
+  @override
+  void initState() {
+    super.initState();
+
+    fetchHistoricalPredictions(widget.stockName);
+  }
+
+  Future<void> fetchHistoricalPredictions(String symbol) async {
+    try {
+      final response = await apiService.fetchHistoricalPredictions(symbol);
+
+      if (!mounted) return;
+
+      setState(() {
+        // Convert the API response to your model
+        historicalData = response.historicalPredictions;
+
+        errorMessage = null;
+      });
+    } catch (e) {
+      if (_historyRetryCount < _maxRetries) {
+        _historyRetryCount++;
+        await Future.delayed(Duration(seconds: 1));
+        await fetchHistoricalPredictions(symbol);
+      } else {
+        _handleError(
+            'Failed to load historical data for $symbol', e as Exception);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+    print('Historical data for $symbol: ${historicalData.length} entries');
+  }
+
+  void _handleError(String message, Exception e) {
+    setState(() {
+      errorMessage = message;
+      isLoading = false;
+    });
+    debugPrint('Error: $message, Exception: $e');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -303,18 +368,39 @@ class StockListTile extends StatelessWidget {
       ),
       child: ListTile(
         title: Text(
-          stockName,
+          widget.stockName,
           style: TextStyle(fontSize: 12),
         ),
         subtitle: Text(
-          stockTicker,
+          widget.stockTicker,
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
         ),
-        trailing: Text(
-          '\$${prediction.currentPrediction.toStringAsFixed(2)}',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        trailing: PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert, color: Colors.grey),
+          color: Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          offset: Offset(0, 40),
+          onSelected: (String value) {
+            handleMenuSelection(
+                value, context, widget.stockName, widget.uid, historicalData);
+          },
+          itemBuilder: (BuildContext context) => [
+            PopupMenuItem<String>(
+              value: 'company_info',
+              child: Text('Company Info'),
+            ),
+            PopupMenuItem<String>(
+              value: 'remove',
+              child: Text('Remove'),
+            ),
+            PopupMenuItem<String>(
+              value: 'invest',
+              child: Text('Invest'),
+            ),
+          ],
         ),
-        onTap: press,
+        onTap: widget.press,
       ),
     );
   }
@@ -591,4 +677,327 @@ class ChartData {
     required this.low,
     required this.close,
   });
+}
+
+void handleMenuSelection(
+  String value,
+  BuildContext context,
+  String companyInfo,
+  String uid,
+  List<PredictionEntry> historicalData,
+) {
+  switch (value) {
+    case 'company_info':
+      showCompanyInfoDialog(context, companyInfo, historicalData);
+      break;
+    case 'remove':
+      showRemoveConfirmation(context);
+      break;
+    case 'invest':
+      navigateToInvestScreen(context);
+      break;
+  }
+}
+
+void showCompanyInfoDialog(
+  BuildContext context,
+  String companyInfo,
+  List<PredictionEntry> historicalData,
+) {
+  final company = getCompany(companyInfo);
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      final screenSize = MediaQuery.of(context).size;
+      final maxDialogWidth = 800.0;
+      final maxDialogHeight = 750.0;
+
+      final dialogWidth = min(
+        Responsive.isMobile(context)
+            ? screenSize.width * 0.95
+            : screenSize.width * 0.7,
+        maxDialogWidth,
+      );
+
+      final dialogHeight = min(
+        Responsive.isMobile(context)
+            ? screenSize.height * 0.85
+            : screenSize.height * 0.8,
+        maxDialogHeight,
+      );
+
+      return AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        contentPadding: EdgeInsets.zero,
+        content: Container(
+          height: dialogHeight.toDouble(),
+          width: dialogWidth.toDouble(),
+          child: Padding(
+            padding: EdgeInsets.all(Responsive.isMobile(context) ? 16.0 : 24.0),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Company header with logo and name
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFEFEFE),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: SvgPicture.asset(
+                          "assets/icons/sprout.svg",
+                          height: 40,
+                          colorFilter:
+                              ColorFilter.mode(primaryColor, BlendMode.srcIn),
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              company?.name ?? companyInfo,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineLarge
+                                  ?.copyWith(
+                                    fontSize:
+                                        Responsive.isMobile(context) ? 20 : 24,
+                                  ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              company?.symbol != null
+                                  ? '${company!.symbol}.${company.exchange == 'VFEX' ? 'VFEX' : 'ZW'}'
+                                  : generateTicker(companyInfo),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall!
+                                  .copyWith(
+                                    color: primaryColor,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+
+                  // Basic info chips
+                  if (company != null)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        Chip(
+                          label: Text(company.sector),
+                          backgroundColor: Colors.grey[200],
+                        ),
+                        Chip(
+                          label: Text('Est. ${company.founded}'),
+                          backgroundColor: Colors.grey[200],
+                        ),
+                        Chip(
+                          label: Text(company.dividend == 'Yes'
+                              ? 'Dividend Paying'
+                              : 'No Dividend'),
+                          backgroundColor: company.dividend == 'Yes'
+                              ? Colors.green[100]
+                              : Colors.grey[200],
+                        ),
+                      ],
+                    ),
+                  SizedBox(height: 16),
+
+                  // Company description
+                  Text(
+                    "About ${company?.name.split(' ').first ?? companyInfo.split(' ').first}",
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    company?.description ??
+                        "${companyInfo} is a leading Zimbabwean company with operations in multiple sectors. "
+                            "The company has established itself as a key player in its industry.",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  SizedBox(height: 16),
+
+                  // Contact info if available
+                  if (company?.website != null ||
+                      company?.headquarters != null) ...[
+                    Text(
+                      "Company Details",
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    SizedBox(height: 8),
+                    if (company?.headquarters != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_on,
+                                size: 16, color: Colors.grey),
+                            SizedBox(width: 8),
+                            Text(
+                              company!.headquarters,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (company?.website != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: InkWell(
+                          onTap: () => launchUrl(Uri.parse(company.website)),
+                          child: Row(
+                            children: [
+                              Icon(Icons.link, size: 16, color: Colors.grey),
+                              SizedBox(width: 8),
+                              Text(
+                                company!.website,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Colors.blue,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    SizedBox(height: 16),
+                  ],
+
+                  // Historical data table
+                  SizedBox(height: 24),
+                  Text(
+                    "Historical Predictions",
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  SizedBox(height: 8),
+                  if (historicalData.isEmpty)
+                    Text(
+                      "No historical data available",
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    )
+                  else
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        columnSpacing: 120,
+                        columns: [
+                          DataColumn(label: Text("Date")),
+                          DataColumn(label: Text("Prediction")),
+                          DataColumn(label: Text("Actual")),
+                          DataColumn(label: Text("Change")),
+                        ],
+                        rows: historicalData.map((data) {
+                          double change =
+                              data.actualClose - data.predictedClose;
+                          double percentageChange =
+                              (change / data.predictedClose) * 100;
+                          return DataRow(cells: [
+                            DataCell(Text(data.date)),
+                            DataCell(Text(
+                                "\$${data.predictedClose.toStringAsFixed(2)}")),
+                            DataCell(Text(
+                              "\$${data.actualClose.toStringAsFixed(2)}",
+                            )),
+                            DataCell(Text(
+                              "${percentageChange.toStringAsFixed(2)}%",
+                            )),
+                          ]);
+                        }).toList(),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(
+              backgroundColor: primaryColor,
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.isMobile(context)
+                    ? defaultPadding
+                    : defaultPadding * 1.5,
+                vertical: Responsive.isMobile(context)
+                    ? defaultPadding / 2
+                    : defaultPadding,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6.0),
+              ),
+            ),
+            onPressed: () => Navigator.pop(context),
+            label: Text(
+              "Close",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: Responsive.isMobile(context) ? 14 : 16,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+void showRemoveConfirmation(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Confirm Removal'),
+      content: Text('Are you sure you want to remove this item?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Item removed')),
+            );
+          },
+          child: Text('Remove', style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
+}
+
+void navigateToInvestScreen(BuildContext context) async {
+  const url = 'https://ctrade.co.zw/';
+
+  if (await canLaunchUrl(Uri.parse(url))) {
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Could not launch investment platform')),
+    );
+  }
 }

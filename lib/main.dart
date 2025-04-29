@@ -1,7 +1,13 @@
+// ignore_for_file: deprecated_member_use
+
+import 'dart:ui_web' as ui;
+import 'dart:html' as html;
+
 import 'package:admin/controllers/menu_app_controller.dart';
 import 'package:admin/screens/auth/sign_in.dart';
 import 'package:admin/screens/main/main_screen.dart'; // Import MainScreen
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -94,5 +100,21 @@ class MyApp extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void registerPdfViewer() {
+    if (kIsWeb) {
+      ui.platformViewRegistry.registerViewFactory(
+        'pdf-iframe',
+        (int viewId) {
+          final element = html.DivElement()
+            ..id = 'pdf-iframe-$viewId'
+            ..style.width = '100%'
+            ..style.height = '100%';
+
+          return element;
+        },
+      );
+    }
   }
 }

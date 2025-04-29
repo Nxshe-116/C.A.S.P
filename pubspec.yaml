@@ -44,6 +44,11 @@ dependencies:
   intl: ^0.19.0
   card_swiper: ^3.0.1
   url_launcher: ^6.3.1
+  flutter_pdfview: ^1.4.0+1
+  path_provider: ^2.1.5
+  syncfusion_flutter_pdfviewer: ^27.2.5
+  file_picker: ^10.1.2
+  syncfusion_flutter_pdf: ^27.2.5
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +68,10 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/documents/
+    - assets/documents/file1.pdf
+    - assets/documents/file2.pdf
+    - assets/documents/file3.pdf
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

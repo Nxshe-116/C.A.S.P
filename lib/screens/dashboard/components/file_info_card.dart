@@ -42,7 +42,7 @@ class _StockInfoCardState extends State<StockInfoCard> {
   @override
   void initState() {
     super.initState();
-    print('initState called - fetching data for ${widget.info}');
+    //print('initState called - fetching data for ${widget.info}');
     fetchHistoricalPredictions(widget.info);
   }
 

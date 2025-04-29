@@ -6,7 +6,7 @@ import 'package:admin/screens/notif/notification.dart';
 import 'package:admin/screens/portfolio/portfolio.dart';
 
 // import 'package:admin/screens/portfolio/portfolio.dart';
-import 'package:admin/screens/profile/profile.dart';
+import 'package:admin/screens/profile/resources.dart';
 import 'package:admin/screens/insight/insight.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -49,6 +49,11 @@ class _MainScreenState extends State<MainScreen> {
         lastName: widget.lastName,
         uid: widget.uid,
       ),
+      ResourcesScreen(
+        name: widget.name,
+        lastName: widget.lastName,
+        uid: widget.uid,
+      ),
       InsightScreen(
         name: widget.name,
         lastName: widget.lastName,
@@ -59,11 +64,11 @@ class _MainScreenState extends State<MainScreen> {
         lastName: widget.lastName,
         uid: widget.uid,
       ),
-      ProfileScreen(
-        name: widget.name,
-        lastName: widget.lastName,
-        uid: widget.uid,
-      ),
+      // ProfileScreen(
+      //   name: widget.name,
+      //   lastName: widget.lastName,
+      //   uid: widget.uid,
+      // ),
     ];
   }
 
