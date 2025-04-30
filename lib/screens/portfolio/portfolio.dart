@@ -33,6 +33,44 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   String? errorMessage;
   final ApiService apiService = ApiService();
 
+  // ZSE Price Sheet data for 29 April 2025
+  final Map<String, double> zsePriceSheet = {
+    'AFDS': 660.0,
+    'ART': 22.1,
+    'ARIS': 5.02,
+    'BAT': 10024.8571,
+    'CAFCA': 2200.0,
+    'CBZ': 700.0,
+    'CFI': 620.0,
+    'DZL': 172.25,
+    'DLTA': 1230.6122,
+    'EHZL': 13.5,
+    'ECO': 271.3539,
+    'FBC': 751.0,
+    'FIDELITY': 42.5,
+    'FML': 400.0,
+    'FMP': 120.0,
+    'GBH': 11.95,
+    'HIPO': 800.0,
+    'MASH': 90.0,
+    'MSHL': 369.0,
+    'NPKZ': 114.95,
+    'NTS': 66.526,
+    'NMB': 388.0,
+    'OKZ': 34.5,
+    'PROPLASTICS': 80.8,
+    'RTG': 63.0,
+    'RIOZ': 79.5,
+    'SEEDCO': 253.0,
+    'SACL': 3.9993,
+    'TANGANDA': 100.0,
+    'TSL': 260.0,
+    'TURNALL': 6.0,
+    'UNIFREIGHT': 180.0,
+    'WILDALE': 4.0,
+    'ZBFH': 0.0, // Price not provided in the sheet
+  };
+
   @override
   void initState() {
     super.initState();
@@ -65,22 +103,20 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         final List<dynamic> selectedCompanies =
             userData?['selectedCompanies'] ?? [];
 
-        // Extract tickers for real-time data fetching
-        final List<String> tickers = selectedCompanies
-            .map((company) => company['symbol'] as String)
-            .toList();
-
         // First create stock items with basic info
         List<StockValidation> tempStocks = selectedCompanies.map((company) {
+          final symbol = company['symbol'] as String;
+          final actualPrice = zsePriceSheet[symbol] ?? 0.0;
+          
           return StockValidation(
-            symbol: company['symbol'] as String,
+            symbol: symbol,
             name: company['name'] as String,
             currentPrediction: 0, // Will be updated from real-time data
-            actualPrice: null,
-            mse: 0, // Will be updated from real-time data if available
-            rmse: 0, // Will be updated from real-time data if available
-            mle: 0, // Will be updated when we have actual prices
-            ksStatistic: 0, // Will be updated when we have actual prices
+            actualPrice: actualPrice > 0 ? actualPrice : null,
+            mse: 0,
+            rmse: 0,
+            mle: 0,
+            ksStatistic: 0,
           );
         }).toList();
 
@@ -89,7 +125,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         });
 
         // Now fetch real-time data for each ticker
-        await fetchRealTimeData(tickers);
+        await fetchRealTimeData(selectedCompanies.map((c) => c['symbol'] as String).toList());
       } else {
         setState(() {
           errorMessage = 'User document not found.';
@@ -116,6 +152,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                 currentPrediction: realTimePrediction.currentPrediction,
                 previousPrediction: realTimePrediction.previousPrediction,
               );
+              // Update metrics after we have the prediction
+              updateStockMetrics(stocks[index]);
             }
           });
         }
@@ -302,10 +340,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Price input section
-                  buildPriceInputSection(stock),
-                  SizedBox(height: 16),
-
                   // Price comparison
                   if (stock.actualPrice != null) ...[
                     buildPriceComparison(
@@ -315,7 +349,14 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                       percentageDifference!,
                     ),
                     SizedBox(height: 16),
-                  ],
+                  ] else
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Text(
+                        'Current market price not available',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
 
                   // Statistical metrics
                   buildStatisticalMetrics(stock),
@@ -325,40 +366,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
           ],
         ],
       ),
-    );
-  }
-
-  Widget buildPriceInputSection(StockValidation stock) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Enter Actual Price',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        SizedBox(height: 8),
-        TextField(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: 'Enter current market price',
-            suffixText: 'Zig',
-          ),
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
-          onChanged: (value) {
-            setState(() {
-              if (value.isNotEmpty) {
-                final newPrice = double.tryParse(value);
-                if (newPrice != null) {
-                  stock.actualPrice = newPrice;
-                  updateStockMetrics(stock);
-                }
-              } else {
-                stock.actualPrice = null;
-              }
-            });
-          },
-        ),
-      ],
     );
   }
 
@@ -375,7 +382,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Price Comparison',
+          'Price Comparison (ZSE Closing Price - 29 Apr 2025)',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 8),
@@ -479,13 +486,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       return Padding(
         padding: const EdgeInsets.all(16.0),
         child: Text(
-          'Enter actual prices to see validation summary',
+          'No stocks with available market prices',
           style: TextStyle(color: Colors.grey),
         ),
       );
     }
 
-     
     final avgRmse =
         stocksWithActualPrices.map((s) => s.rmse).reduce((a, b) => a + b) /
             stocksWithActualPrices.length;
@@ -642,7 +648,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             'Measures difference between predicted and actual distributions. Lower is better.'),
         SizedBox(height: 8),
         Text(
-          'Note: Metrics are calculated across all stocks with entered prices.',
+          'Note: Metrics are calculated across all stocks with available market prices.',
           style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
         ),
       ],
@@ -667,19 +673,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget buildSummaryMetric(String label, String value) {
-    return Column(
-      children: [
-        Text(label, style: TextStyle(color: Colors.grey)),
-        SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-      ],
     );
   }
 }
@@ -817,7 +810,7 @@ class StockValidation {
   final String name;
   final double currentPrediction;
   final double? previousPrediction;
-  double? actualPrice;
+  final double? actualPrice;
 
   final double rmse;
   final double mle;

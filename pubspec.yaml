@@ -49,6 +49,7 @@ dependencies:
   syncfusion_flutter_pdfviewer: ^27.2.5
   file_picker: ^10.1.2
   syncfusion_flutter_pdf: ^27.2.5
+  custom_sliding_segmented_control: ^1.8.5
 
 dev_dependencies:
   flutter_test:

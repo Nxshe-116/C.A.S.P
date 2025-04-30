@@ -98,6 +98,12 @@
       "languageVersion": "3.1"
     },
     {
+      "name": "custom_sliding_segmented_control",
+      "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/custom_sliding_segmented_control-1.8.5",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
       "name": "device_info_plus",
       "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/device_info_plus-10.1.2",
       "packageUri": "lib/",
@@ -650,7 +656,7 @@
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2025-04-29T10:57:53.892564Z",
+  "generated": "2025-04-29T12:57:10.963485Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///Users/nashechagumaira/development/flutter",

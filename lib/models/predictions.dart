@@ -20,6 +20,7 @@ class RealTimePrediction {
     );
   }
 }
+
 class HistoricalPrediction {
   final String date;
   final double predictedClose;
@@ -318,43 +319,80 @@ class ClimateReport {
 
 class HistoricalPredictionModel {
   final String symbol;
-  final List<PredictionEntry> historicalPredictions;
+  final List<PredictionEntry>
+      historicalPredictions; // Changed from historicalData
+  final String? note;
+  final bool success;
 
   HistoricalPredictionModel({
     required this.symbol,
     required this.historicalPredictions,
+    this.note,
+    required this.success,
   });
 
-  factory HistoricalPredictionModel.fromJson(Map<String, dynamic> json) {
-    return HistoricalPredictionModel(
-      symbol: json['symbol'],
-      historicalPredictions: (json['historical_predictions'] as List)
-          .map((item) => PredictionEntry.fromJson(item))
-          .toList(),
-    );
-  }
+factory HistoricalPredictionModel.fromJson(Map<String, dynamic> json) {
+  return HistoricalPredictionModel(
+    symbol: json['data']['symbol'],
+    historicalPredictions: (json['data']['historical_data'] as List)
+        .map((item) => PredictionEntry.fromJson(item))
+        .toList(),
+    note: json['data']['note'],
+    success: json['success'], // This comes from the root, not data
+  );
+}
 }
 
 class PredictionEntry {
+  final double actualClose; // Changed from actualPrice
+  final String date;
+  final String direction;
+  final double predictedClose; // Changed from predictedPrice
+  final double variancePercent;
+
+  PredictionEntry({
+    required this.actualClose,
+    required this.date,
+    required this.direction,
+    required this.predictedClose,
+    required this.variancePercent,
+  });
+
+  factory PredictionEntry.fromJson(Map<String, dynamic> json) {
+    return PredictionEntry(
+      actualClose: json['actual_price']?.toDouble() ?? 0.0,
+      date: json['date'],
+      direction: json['direction'],
+      predictedClose: json['predicted_price']?.toDouble() ?? 0.0,
+      variancePercent: json['variance_percent']?.toDouble() ?? 0.0,
+    );
+  }
+
+  // For backward compatibility
+  double get actualPrice => actualClose;
+  double get predictedPrice => predictedClose;
+}
+
+class PredictionEntryNorm {
   final String date;
   final double predictedClose;
   final double actualClose;
 
-  PredictionEntry({
+  PredictionEntryNorm({
     required this.date,
     required this.predictedClose,
     required this.actualClose,
   });
 
-  factory PredictionEntry.fromJson(Map<String, dynamic> json) {
-    return PredictionEntry(
+  factory PredictionEntryNorm.fromJson(Map<String, dynamic> json) {
+    return PredictionEntryNorm(
       date: json['date'],
       predictedClose: (json['predicted_close'] as num).toDouble(),
       actualClose: (json['actual_close'] as num).toDouble(),
     );
   }
 
-    Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson() {
     return {
       'date': date,
       'predicted_close': predictedClose,

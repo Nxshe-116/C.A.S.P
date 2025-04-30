@@ -2,9 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:admin/models/climate.dart';
 import 'package:admin/models/company.dart';
+import 'package:admin/models/montlhy.dart';
 import 'package:admin/models/notifications.dart';
 import 'package:admin/models/predictions.dart';
- 
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -199,16 +200,17 @@ class ApiService {
     }
   }
 
-// For use in service classes that just return data
+// In your service class
 Future<HistoricalPredictionModel> fetchHistoricalPredictions(String symbol) async {
   final response = await http.get(Uri.parse('$baseUrl/api/model/history/$symbol'));
-  final json = jsonDecode(response.body);
   
-  if (response.statusCode == 200 && json['success']) {
-    return HistoricalPredictionModel.fromJson(json['data']);
-  } else {
-    throw Exception('Failed to load history');
+  if (response.statusCode == 200) {
+    final json = jsonDecode(response.body);
+    if (json['success']) {
+      return HistoricalPredictionModel.fromJson(json); // Pass the entire JSON
+    }
   }
+  throw Exception('Failed to load history');
 }
 
 
@@ -370,6 +372,78 @@ Future<HistoricalPredictionModel> fetchHistoricalPredictions(String symbol) asyn
           .timeout(timeoutDuration);
     } catch (e) {
       debugPrint('Error adding notification: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<MonthlyPrediction>> fetchMonthlyPredictions({
+    required String symbol,
+    required int year,
+    required String month,
+  }) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse(
+                '$baseUrl/api/model/monthly-predictions/$year/$month/$symbol'),
+          )
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true) {
+          final List<dynamic> weeklyData =
+              jsonResponse['data']['weekly_breakdown'];
+          return weeklyData
+              .map((json) => MonthlyPrediction.fromJson(json))
+              .toList();
+        }
+        throw Exception('API returned success: false');
+      }
+      throw Exception(
+          'Failed to load monthly predictions: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Error fetching monthly predictions: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchFullMonthlyData({
+    required String symbol,
+    required int year,
+    required String month,
+  }) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse(
+                '$baseUrl/api/model/monthly-predictions/$year/$month/$symbol'),
+          )
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true) {
+          return {
+            'symbol': jsonResponse['data']['symbol'],
+            'year': jsonResponse['data']['year'],
+            'month': jsonResponse['data']['month'],
+            'weeklyPredictions':
+                (jsonResponse['data']['weekly_breakdown'] as List)
+                    .map((json) => MonthlyPrediction.fromJson(json))
+                    .toList(),
+            'climateMetrics': jsonResponse['data']['climate_metrics'] != null
+                ? ClimateMetrics.fromJson(
+                    jsonResponse['data']['climate_metrics'])
+                : null,
+            'dataSource': jsonResponse['data']['data_source'],
+          };
+        }
+        throw Exception('API returned success: false');
+      }
+      throw Exception('Failed to load monthly data: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Error fetching full monthly data: $e');
       rethrow;
     }
   }
