@@ -44,17 +44,17 @@ class FrameworkDocument {
 class _ResourcesScreenState extends State<ResourcesScreen> {
   final List<FrameworkDocument> documents = [
     FrameworkDocument(
-      title: "Zimbabwe Country Profile",
+      title: "World Bank Risk Country Profile(Zimbabwe)",
       type: "PDF",
       url: "file1.pdf",
     ),
     FrameworkDocument(
-      title: "Economic Report 2023",
+      title: "National Climate Change Response Strategy",
       type: "PDF",
       url: "file2.pdf",
     ),
     FrameworkDocument(
-      title: "Development Indicators",
+      title: "Zimbabwe Climate Policy(2016)",
       type: "PDF",
       url: "file3.pdf",
     ),
