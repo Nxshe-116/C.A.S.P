@@ -692,7 +692,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         _buildGuideItem('MLE (Maximum Likelihood Estimate)',
             'Measures how well model explains observed data. Closer to 0 is better.'),
         _buildGuideItem('KS Stat (Kolmogorov-Smirnov)',
-            'Measures difference between predicted and actual distributions (0.4-0.6). Closer to 0.4 is better.'),
+            'Measures difference between predicted and actual distributions.'),
         SizedBox(height: 8),
         Text(
           'Note: Metrics are calculated across all stocks with available market prices.',

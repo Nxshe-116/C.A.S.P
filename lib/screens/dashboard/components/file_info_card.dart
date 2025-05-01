@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:math';
 
 import 'package:admin/models/company.dart';
@@ -454,29 +456,66 @@ void showCompanyInfoDialog(
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: DataTable(
-                        columnSpacing: 120,
+                        columnSpacing: Responsive.isMobile(context) ? 24 : 48,
                         columns: [
                           DataColumn(label: Text("Date")),
-                          DataColumn(label: Text("Prediction")),
+                          DataColumn(label: Text("Predicted")),
                           DataColumn(label: Text("Actual")),
-                          DataColumn(label: Text("Change")),
+                          DataColumn(label: Text("Variance")),
+                          DataColumn(label: Text("Direction")),
                         ],
-                        rows: historicalData.map((data) {
-                          double change =
-                              data.actualClose - data.predictedClose;
-                          double percentageChange =
-                              (change / data.predictedClose) * 100;
-                          return DataRow(cells: [
-                            DataCell(Text(data.date)),
-                            DataCell(Text(
-                                "\$${data.predictedClose.toStringAsFixed(2)}")),
-                            DataCell(Text(
-                              "\$${data.actualClose.toStringAsFixed(2)}",
-                            )),
-                            DataCell(Text(
-                              "${percentageChange.toStringAsFixed(2)}%",
-                            )),
-                          ]);
+                        rows: historicalData.map((entry) {
+                          final isOver = entry.direction == 'over';
+                          final varianceColor =
+                              isOver ? Colors.red : Colors.green;
+                          final directionText = isOver ? "OVER" : "UNDER";
+
+                          return DataRow(
+                            cells: [
+                              DataCell(Text(entry.date)),
+                              DataCell(Text(
+                                "\$${entry.predictedClose.toStringAsFixed(2)}",
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                ),
+                              )),
+                              DataCell(Text(
+                                "\$${entry.actualClose.toStringAsFixed(2)}",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )),
+                              DataCell(Text(
+                                "${entry.variancePercent.toStringAsFixed(2)}%",
+                                style: TextStyle(
+                                  color: varianceColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )),
+                              DataCell(
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isOver
+                                        ? Colors.red.withOpacity(0.2)
+                                        : Colors.green.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    directionText,
+                                    style: TextStyle(
+                                      color: isOver ? Colors.red : Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
                         }).toList(),
                       ),
                     ),

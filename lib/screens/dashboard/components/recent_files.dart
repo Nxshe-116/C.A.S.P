@@ -1304,7 +1304,6 @@ void showCompanyInfoDialog(
               ),
             ),
             onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.close, color: Colors.white, size: 18),
             label: Text(
               "Close",
               style: TextStyle(
