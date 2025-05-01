@@ -1,17 +1,16 @@
-// ignore_for_file: deprecated_member_use
-
-import 'dart:io';
+// ignore_for_file: deprecated_member_use, unused_local_variable
 
 import 'dart:html' as html;
-
+import 'dart:io';
 import 'package:admin/constants.dart';
 import 'package:admin/responsive.dart';
 import 'package:admin/screens/dashboard/components/header.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:admin/screens/profile/pdfviewer.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class ResourcesScreen extends StatefulWidget {
   final String name;
@@ -62,81 +61,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
 
   bool isPdfDialogOpen = false;
   String? currentPdfUrl;
-  bool isPdfLoading = true;
   String? currentPdfTitle;
-  late PdfViewerController pdfViewerController;
-
-  @override
-  void initState() {
-    super.initState();
-    pdfViewerController = PdfViewerController();
-  }
-
-  @override
-  void dispose() {
-    pdfViewerController.dispose();
-    super.dispose();
-  }
-
-  Future<void> openPdfPopup(String pdfUrl, String title) async {
-    try {
-      if (!mounted) return;
-
-      setState(() {
-        currentPdfUrl = pdfUrl;
-        currentPdfTitle = title;
-        isPdfDialogOpen = true;
-        isPdfLoading = true;
-      });
-
-      // // Verify the file exists
-      // final manifestContent = await rootBundle.loadString('AssetManifest.json');
-      // final Map<String, dynamic> manifestMap = json.decode(manifestContent);
-
-      try {
-        await rootBundle.load(pdfUrl); // Try loading directly
-      } catch (e) {
-        print('PDF file not found: $pdfUrl');
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PDF file not found')),
-        );
-        closePdfPopup();
-        return;
-      }
-
-      // For web, preload the PDF to verify it can be loaded
-      if (kIsWeb) {
-        try {
-          final filename = pdfUrl.replaceFirst('assets/documents/', '');
-          await rootBundle.load('assets/documents/$filename');
-        } catch (e) {
-          print('Error loading PDF: $e');
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error loading PDF: ${e.toString()}')),
-          );
-          closePdfPopup();
-        }
-      }
-    } catch (e) {
-      print('Error opening PDF: $e');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
-      closePdfPopup();
-    }
-  }
-
-  void closePdfPopup() {
-    if (!mounted) return;
-    setState(() {
-      isPdfDialogOpen = false;
-      currentPdfUrl = null;
-      currentPdfTitle = null;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -199,12 +124,38 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
         title: Text(doc.title),
         subtitle: Text(doc.type),
         onTap: () {
-          final pdfPath = 'assets/documents/${doc.url}';
+          final pdfPath = doc.url; // Just use the filename
           print('Opening PDF: $pdfPath');
           openPdfPopup(pdfPath, doc.title);
         },
       ),
     );
+  }
+
+  Future<void> openPdfPopup(String pdfUrl, String title) async {
+    try {
+      setState(() {
+        currentPdfUrl = pdfUrl;
+        currentPdfTitle = title;
+        isPdfDialogOpen = true;
+      });
+    } catch (e) {
+      print('Error opening PDF: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+      closePdfPopup();
+    }
+  }
+
+  void closePdfPopup() {
+    if (!mounted) return;
+    setState(() {
+      isPdfDialogOpen = false;
+      currentPdfUrl = null;
+      currentPdfTitle = null;
+    });
   }
 
   Widget buildPdfDialog() {
@@ -260,109 +211,41 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               ],
             ),
             const Divider(),
+            // In your buildPdfDialog method:
             Expanded(
-              child: kIsWeb ? buildWebPdfViewer() : buildMobilePdfViewer(),
-            ),
+              child: currentPdfUrl != null
+                  ? PdfViewerPage(fileName: currentPdfUrl!)
+                  : const Center(child: Text('No PDF selected')),
+            )
           ],
         ),
       ),
     );
   }
 
-  Widget buildWebPdfViewer() {
-    if (currentPdfUrl == null)
-      return const Center(child: Text('No PDF selected'));
-
-    return FutureBuilder<Uint8List>(
-      future: rootBundle
-          .load(currentPdfUrl!)
-          .then((data) => data.buffer.asUint8List()),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text('Error loading PDF: ${snapshot.error}'));
-        }
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        return SfPdfViewer.memory(
-          snapshot.data!,
-          controller: pdfViewerController,
-          onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('PDF failed to load: ${details.error}')),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<Uint8List> loadPdfBytes(String assetPath) async {
-    try {
-      final byteData = await rootBundle.load(assetPath);
-      return byteData.buffer.asUint8List();
-    } catch (e) {
-      throw Exception('Failed to load PDF bytes: $e');
-    }
-  }
-
-  Widget buildMobilePdfViewer() {
-    if (currentPdfUrl == null) {
-      return const Center(child: Text('No PDF selected'));
-    }
-
-    return FutureBuilder<String>(
-      future: getPdfPath(currentPdfUrl!.replaceFirst('assets/documents/', '')),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          final file = File(snapshot.data!);
-          if (!file.existsSync()) {
-            return const Center(child: Text('PDF file not found'));
-          }
-
-          return SfPdfViewer.file(
-            file,
-            controller: pdfViewerController,
-            onDocumentLoaded: (details) {
-              if (mounted) {
-                setState(() => isPdfLoading = false);
-              }
-            },
-          );
-        }
-        return const Center(child: CircularProgressIndicator());
-      },
-    );
-  }
-
-  Future<String> getPdfPath(String filename) async {
-    try {
-      final ByteData data = await rootBundle.load('assets/documents/$filename');
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/$filename');
-      await file.writeAsBytes(data.buffer.asUint8List(), flush: true);
-      return file.path;
-    } catch (e) {
-      throw Exception('Failed to load PDF: $e');
-    }
-  }
-
   Future<void> openPdfInNewTab(String pdfUrl) async {
     try {
-      final fullPath = '$pdfUrl';
-      final bytes = await rootBundle.load(fullPath);
-      final blob = html.Blob([bytes.buffer.asUint8List()], 'application/pdf');
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      html.window.open(url, '_blank');
+      if (kIsWeb) {
+        // Web download implementation
+        final anchor = html.AnchorElement()
+          ..href = 'assets/documents/$pdfUrl'
+          ..target = '_blank'
+          ..download = pdfUrl
+          ..click();
+      } else {
+        // Mobile download implementation
+        final bytes = await rootBundle.load('assets/documents/$pdfUrl');
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/$pdfUrl');
+        await file.writeAsBytes(bytes.buffer.asUint8List());
+        // Open the file - requires open_file package
+        // await OpenFile.open(file.path);
+      }
     } catch (e) {
-      print('Error opening PDF: $e');
+      print('Download error: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error opening PDF: ${e.toString()}')),
+        SnackBar(content: Text('Download failed: ${e.toString()}')),
       );
     }
   }

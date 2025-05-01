@@ -74,6 +74,42 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "connectivity",
+      "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/connectivity-3.0.6",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "connectivity_for_web",
+      "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/connectivity_for_web-0.4.0+1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "connectivity_macos",
+      "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/connectivity_macos-0.2.1+2",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "connectivity_platform_interface",
+      "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/connectivity_platform_interface-2.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "connectivity_plus",
+      "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/connectivity_plus-6.1.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "connectivity_plus_platform_interface",
+      "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/connectivity_plus_platform_interface-2.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
+    },
+    {
       "name": "convert",
       "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/convert-3.1.2",
       "packageUri": "lib/",
@@ -100,6 +136,12 @@
     {
       "name": "custom_sliding_segmented_control",
       "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/custom_sliding_segmented_control-1.8.5",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "dbus",
+      "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/dbus-0.7.11",
       "packageUri": "lib/",
       "languageVersion": "2.17"
     },
@@ -304,6 +346,12 @@
     {
       "name": "nested",
       "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/nested-1.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "nm",
+      "rootUri": "file:///Users/nashechagumaira/.pub-cache/hosted/pub.dev/nm-0.5.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -656,7 +704,7 @@
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2025-04-29T12:57:10.963485Z",
+  "generated": "2025-05-01T05:12:41.572826Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///Users/nashechagumaira/development/flutter",
