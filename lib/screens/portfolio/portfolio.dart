@@ -35,40 +35,43 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
   // ZSE Price Sheet data
   final Map<String, double> zsePriceSheet = {
-    'AFDS.ZW': 660.0,
-    'ART.ZW': 22.1,
-    'ARIS.ZW': 5.02,
-    'BAT.ZW': 10024.8571,
-    'CAFCA.ZW': 2200.0,
-    'CBZ.ZW': 700.0,
-    'CFI.ZW': 620.0,
-    'DZL.ZW': 172.25,
-    'DLTA.ZW': 1230.6122,
-    'EHZL.ZW': 13.5,
-    'ECO.ZW': 271.3539,
-    'FBC.ZW': 751.0,
-    'FIDELITY.ZW': 42.5,
-    'FML.ZW': 400.0,
-    'FMP.ZW': 120.0,
-    'GBH.ZW': 11.95,
-    'HIPO.ZW': 800.0,
-    'MASH.ZW': 90.0,
-    'MSHL.ZW': 369.0,
-    'NPKZ.ZW': 114.95,
-    'NTS.ZW': 66.526,
-    'NMB.ZW': 388.0,
-    'OKZ.ZW': 34.5,
-    'PROPLASTICS.ZW': 80.8,
-    'RTG.ZW': 63.0,
-    'RIOZ.ZW': 79.5,
-    'SEED.ZW': 253.0,
-    'SACL.ZW': 3.9993,
-    'TANGANDA.ZW': 100.0,
-    'TSL.ZW': 260.0,
-    'TURNALL.ZW': 6.0,
-    'UNIFREIGHT.ZW': 180.0,
-    'WILDALE.ZW': 4.0,
-    'ZBFH.ZW': 0.0,
+    'AFDS.ZW': 660.0, // Afdis Distillers Limited
+    'ART.ZW': 22.1, // Amalgamated Regional Trading (Art) Holdings Limited
+    'ARIS.ZW': 4.5102, // Ariston Holdings Limited
+    'BAT.ZW': 11528.55, // British American Tobacco Zimbabwe Limited
+    'CAFCA.ZW': 1999.9647, // Cafca Limited
+    'CBZ.ZW': 700.0, // Cbz Holdings Limited
+    'CFI.ZW': 539.85, // Cfi Holdings Limited
+    'DZL.ZW': 172.35, // Dairibord Holdings Limited
+    'DLTA.ZW': 1357.5621, // Delta Corporation Limited
+    'EHZL.ZW': 13.0233, // Ecocash Holdings Zimbabwe Limited
+    'ECO.ZW': 276.5417, // Econet Wireless Zimbabwe Limited
+    'FBC.ZW': 751.0, // Fbc Holdings Limited
+    'FIDELITY.ZW': 42.5, // Fidelity Life Assurance Limited
+    'FML.ZW': 400.0, // First Mutual Holdings Limited
+    'FMP.ZW': 119.95, // First Mutual Properties Limited
+    'GBH.ZW': 11.95, // General Beltings Holdings Limited
+    'HIPO.ZW': 800.0, // Hippo Valley Estates Limited
+    'MASH.ZW': 90.0, // Mashonaland Holdings Limited
+    'MSHL.ZW': 359.95, // Masimba Holdings Limited
+    'NPKZ.ZW': 114.95, // Nampak Zimbabwe Limited
+    'NTS.ZW': 66.526, // National Tyre Services Limited
+    'NMB.ZW': 370.0045, // Nmbz Holdings Limited
+    'OKZ.ZW': 34.5, // Ok Zimbabwe Limited
+    'PROPLASTICS.ZW': 81.9302, // Proplastics Limited
+    'RTG.ZW': 63.0, // Rainbow Tourism Group Limited
+    'RIOZ.ZW': 79.5498, // Rxiozim Limited
+    'SEED.ZW': 253.0, // Seed Co Limited
+    'SACL.ZW': 3.7081, // Starafricacorporation Limited
+    'TANGANDA.ZW': 100.0, // Tanganda Tea Company Limited
+    'TSL.ZW': 260.0, // Tsl Limited
+    'TURNALL.ZW': 6.0, // Turnall Holdings Limited
+    'UNIFREIGHT.ZW': 180.0, // Unifreight Africa Limited
+    'WILDALE.ZW': 4.0, // Willdale Limited
+    'ZBFH.ZW': 550.0, // Zb Financial Holdings Limited
+    'ZECO.ZW': 0.0018, // Zeco Holdings Limited
+    'ZIMP.ZW': 20.0, // Zimbabwe Newspapers (1980) Limited
+    'ZIMRE.ZW': 19.2205, // Zimre Holdings Limited
   };
 
   @override
@@ -511,6 +514,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
@@ -518,6 +522,13 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: primaryColor,
+            ),
+          ),
+          Text(
+            'As of: ${DateTime.now()}',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.black,
             ),
           ),
         ],
@@ -690,7 +701,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         _buildGuideItem('RMSE (Root Mean Square Error)',
             'Measures average prediction error. Lower is better.'),
         _buildGuideItem('MLE (Maximum Likelihood Estimate)',
-            'Measures how well model explains observed data. Closer to 0 is better.'),
+            'Measures how well model explains observed data '),
         _buildGuideItem('KS Stat (Kolmogorov-Smirnov)',
             'Measures difference between predicted and actual distributions.'),
         SizedBox(height: 8),

@@ -1018,9 +1018,17 @@ void handleMenuSelection(
 void showCompanyInfoDialog(
   BuildContext context,
   String companyInfo,
-  List<PredictionEntry> historicalData,
+  List<PredictionEntry> historicalData, // Now accepts List<PredictionEntry>
 ) {
   final company = getCompany(companyInfo);
+
+  // Sort historical data by date (earliest first)
+  historicalData.sort((a, b) => a.date.compareTo(b.date));
+
+  // Pagination state - 5 entries per page to match real-time
+  final pageSize = 5;
+  int currentPage = 0;
+  final totalPages = (historicalData.length / pageSize).ceil();
 
   showDialog(
     context: context,
@@ -1043,276 +1051,323 @@ void showCompanyInfoDialog(
         maxDialogHeight,
       );
 
-      return AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        contentPadding: EdgeInsets.zero,
-        content: Container(
-          height: dialogHeight.toDouble(),
-          width: dialogWidth.toDouble(),
-          child: Padding(
-            padding: EdgeInsets.all(Responsive.isMobile(context) ? 16.0 : 24.0),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Company header with logo and name
-                  Row(
+      return StatefulBuilder(
+        builder: (context, setState) {
+          // Get paginated data
+          final startIndex = currentPage * pageSize;
+          final endIndex = min(startIndex + pageSize, historicalData.length);
+          final paginatedData = historicalData.sublist(startIndex, endIndex);
+
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            contentPadding: EdgeInsets.zero,
+            content: Container(
+              height: dialogHeight.toDouble(),
+              width: dialogWidth.toDouble(),
+              child: Padding(
+                padding:
+                    EdgeInsets.all(Responsive.isMobile(context) ? 16.0 : 24.0),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFFEFEFE),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: SvgPicture.asset(
-                          "assets/icons/sprout.svg",
-                          height: 40,
-                          colorFilter:
-                              ColorFilter.mode(primaryColor, BlendMode.srcIn),
-                        ),
-                      ),
-                      SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              company?.name ?? companyInfo,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineLarge
-                                  ?.copyWith(
-                                    fontSize:
-                                        Responsive.isMobile(context) ? 20 : 24,
-                                  ),
+                      // Company header with logo and name
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFFEFEFE),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              company?.symbol != null
-                                  ? '${company!.symbol}.${company.exchange == 'VFEX' ? 'VFEX' : 'ZW'}'
-                                  : generateTicker(companyInfo),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall!
-                                  .copyWith(
-                                    color: primaryColor,
-                                  ),
+                            child: SvgPicture.asset(
+                              "assets/icons/sprout.svg",
+                              height: 40,
+                              colorFilter: ColorFilter.mode(
+                                  primaryColor, BlendMode.srcIn),
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  company?.name ?? companyInfo,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineLarge
+                                      ?.copyWith(
+                                        fontSize: Responsive.isMobile(context)
+                                            ? 20
+                                            : 24,
+                                      ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  company?.symbol != null
+                                      ? '${company!.symbol}.${company.exchange == 'VFEX' ? 'VFEX' : 'ZW'}'
+                                      : generateTicker(companyInfo),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall!
+                                      .copyWith(
+                                        color: primaryColor,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+
+                      // Basic info chips
+                      if (company != null)
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            Chip(
+                              label: Text(company.sector),
+                              backgroundColor: Colors.grey[200],
+                            ),
+                            Chip(
+                              label: Text('Est. ${company.founded}'),
+                              backgroundColor: Colors.grey[200],
+                            ),
+                            Chip(
+                              label: Text(company.dividend == 'Yes'
+                                  ? 'Dividend Paying'
+                                  : 'No Dividend'),
+                              backgroundColor: company.dividend == 'Yes'
+                                  ? Colors.green[100]
+                                  : Colors.grey[200],
                             ),
                           ],
                         ),
+                      SizedBox(height: 16),
+
+                      // Company description
+                      Text(
+                        "About ${company?.name.split(' ').first ?? companyInfo.split(' ').first}",
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                       ),
+                      SizedBox(height: 8),
+                      Text(
+                        company?.description ??
+                            "${companyInfo} is a leading Zimbabwean company with operations in multiple sectors. "
+                                "The company has established itself as a key player in its industry.",
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Contact info if available
+                      if (company?.website != null ||
+                          company?.headquarters != null) ...[
+                        Text(
+                          "Company Details",
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                        SizedBox(height: 8),
+                        if (company?.headquarters != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              children: [
+                                Icon(Icons.location_on,
+                                    size: 16, color: Colors.grey),
+                                SizedBox(width: 8),
+                                Text(
+                                  company!.headquarters,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (company?.website != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: InkWell(
+                              onTap: () =>
+                                  launchUrl(Uri.parse(company.website)),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.link,
+                                      size: 16, color: Colors.grey),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    company!.website,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: Colors.blue,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        SizedBox(height: 16),
+                      ],
+
+                      // Historical data table with pagination
+                      SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Historical Predictions (${historicalData.length} total)",
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          if (historicalData.length > pageSize)
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.chevron_left),
+                                  onPressed: currentPage > 0
+                                      ? () => setState(() => currentPage--)
+                                      : null,
+                                ),
+                                Text(
+                                  '${currentPage + 1} of $totalPages',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.chevron_right),
+                                  onPressed: currentPage < totalPages - 1
+                                      ? () => setState(() => currentPage++)
+                                      : null,
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      if (historicalData.isEmpty)
+                        Text(
+                          "No historical data available",
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        )
+                      else
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            columnSpacing:
+                                Responsive.isMobile(context) ? 24 : 48,
+                            columns: [
+                              DataColumn(label: Text("Date")),
+                              DataColumn(label: Text("Predicted")),
+                              DataColumn(label: Text("Actual")),
+                              DataColumn(label: Text("Variance")),
+                              DataColumn(label: Text("Direction")),
+                            ],
+                            rows: paginatedData.map((entry) {
+                              final isOver = entry.direction == 'over';
+                              final varianceColor =
+                                  isOver ? Colors.red : Colors.green;
+                              final directionText = isOver ? "OVER" : "UNDER";
+
+                              return DataRow(
+                                cells: [
+                                  DataCell(Text(entry.date)),
+                                  DataCell(Text(
+                                    "\$${entry.predictedClose.toStringAsFixed(2)}",
+                                    style: TextStyle(
+                                      color: Colors.grey[700],
+                                    ),
+                                  )),
+                                  DataCell(Text(
+                                    "\$${entry.actualClose.toStringAsFixed(2)}",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )),
+                                  DataCell(Text(
+                                    "${entry.variancePercent.toStringAsFixed(2)}%",
+                                    style: TextStyle(
+                                      color: varianceColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )),
+                                  DataCell(
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isOver
+                                            ? Colors.red.withOpacity(0.2)
+                                            : Colors.green.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        directionText,
+                                        style: TextStyle(
+                                          color: isOver
+                                              ? Colors.red
+                                              : Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        ),
                     ],
                   ),
-                  SizedBox(height: 16),
-
-                  // Basic info chips
-                  if (company != null)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        Chip(
-                          label: Text(company.sector),
-                          backgroundColor: Colors.grey[200],
-                        ),
-                        Chip(
-                          label: Text('Est. ${company.founded}'),
-                          backgroundColor: Colors.grey[200],
-                        ),
-                        Chip(
-                          label: Text(company.dividend == 'Yes'
-                              ? 'Dividend Paying'
-                              : 'No Dividend'),
-                          backgroundColor: company.dividend == 'Yes'
-                              ? Colors.green[100]
-                              : Colors.grey[200],
-                        ),
-                      ],
-                    ),
-                  SizedBox(height: 16),
-
-                  // Company description
-                  Text(
-                    "About ${company?.name.split(' ').first ?? companyInfo.split(' ').first}",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    company?.description ??
-                        "${companyInfo} is a leading Zimbabwean company with operations in multiple sectors. "
-                            "The company has established itself as a key player in its industry.",
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  SizedBox(height: 16),
-
-                  // Contact info if available
-                  if (company?.website != null ||
-                      company?.headquarters != null) ...[
-                    Text(
-                      "Company Details",
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    SizedBox(height: 8),
-                    if (company?.headquarters != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(
-                          children: [
-                            Icon(Icons.location_on,
-                                size: 16, color: Colors.grey),
-                            SizedBox(width: 8),
-                            Text(
-                              company!.headquarters,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (company?.website != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: InkWell(
-                          onTap: () => launchUrl(Uri.parse(company.website)),
-                          child: Row(
-                            children: [
-                              Icon(Icons.link, size: 16, color: Colors.grey),
-                              SizedBox(width: 8),
-                              Text(
-                                company!.website,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: Colors.blue,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    SizedBox(height: 16),
-                  ],
-
-                  // Historical data table
-                  SizedBox(height: 24),
-                  Text(
-                    "Historical Predictions",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  SizedBox(height: 8),
-                  if (historicalData.isEmpty)
-                    Text(
-                      "No historical data available",
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    )
-                  else
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columnSpacing: Responsive.isMobile(context) ? 24 : 48,
-                        columns: [
-                          DataColumn(label: Text("Date")),
-                          DataColumn(label: Text("Predicted")),
-                          DataColumn(label: Text("Actual")),
-                          DataColumn(label: Text("Variance")),
-                          DataColumn(label: Text("Direction")),
-                        ],
-                        rows: historicalData.map((entry) {
-                          final isOver = entry.direction == 'over';
-                          final varianceColor =
-                              isOver ? Colors.red : Colors.green;
-                          final directionText = isOver ? "OVER" : "UNDER";
-
-                          return DataRow(
-                            cells: [
-                              DataCell(Text(entry.date)),
-                              DataCell(Text(
-                                "\$${entry.predictedClose.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                ),
-                              )),
-                              DataCell(Text(
-                                "\$${entry.actualClose.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )),
-                              DataCell(Text(
-                                "${entry.variancePercent.toStringAsFixed(2)}%",
-                                style: TextStyle(
-                                  color: varianceColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )),
-                              DataCell(
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isOver
-                                        ? Colors.red.withOpacity(0.2)
-                                        : Colors.green.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    directionText,
-                                    style: TextStyle(
-                                      color: isOver ? Colors.red : Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-        actions: [
-          ElevatedButton.icon(
-            style: TextButton.styleFrom(
-              backgroundColor: primaryColor,
-              padding: EdgeInsets.symmetric(
-                horizontal: Responsive.isMobile(context)
-                    ? defaultPadding
-                    : defaultPadding * 1.5,
-                vertical: Responsive.isMobile(context)
-                    ? defaultPadding / 2
-                    : defaultPadding,
+            actions: [
+              ElevatedButton.icon(
+                style: TextButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: Responsive.isMobile(context)
+                        ? defaultPadding
+                        : defaultPadding * 1.5,
+                    vertical: Responsive.isMobile(context)
+                        ? defaultPadding / 2
+                        : defaultPadding,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6.0),
+                  ),
+                ),
+                onPressed: () => Navigator.pop(context),
+                label: Text(
+                  "Close",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: Responsive.isMobile(context) ? 14 : 16,
+                  ),
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6.0),
-              ),
-            ),
-            onPressed: () => Navigator.pop(context),
-            label: Text(
-              "Close",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: Responsive.isMobile(context) ? 14 : 16,
-              ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       );
     },
   );
@@ -1383,11 +1438,24 @@ void showDetailedChart(
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      "Detailed Chart for $stockSymbol",
-                      style: Theme.of(context).textTheme.titleLarge,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: Theme.of(context).textTheme.titleMedium,
+                          children: [
+                            const TextSpan(text: 'Detailed Chart for '),
+                            TextSpan(
+                              text: stockSymbol,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    IconButton(
+                 IconButton(
                       icon: Icon(Icons.close),
                       onPressed: () => Navigator.pop(context),
                     ),
@@ -1523,7 +1591,7 @@ void showDetailedChart(
                                     customPattern: '¤#,##0.00')),
                             series: <CartesianSeries>[
                               ColumnSeries<ChartData, DateTime>(
-                                name: 'Closing Price',
+                                name: 'Climate Adjusted Price',
                                 dataSource: climateAdjustedData,
                                 xValueMapper: (ChartData data, _) => data.x,
                                 yValueMapper: (ChartData data, _) => data.close,
@@ -1544,7 +1612,7 @@ void showDetailedChart(
                                 ),
                               ),
                               ColumnSeries<ChartData, DateTime>(
-                                name: 'Opening Price',
+                                name: 'Normal Price',
                                 dataSource: wclimateAdjustedData,
                                 xValueMapper: (ChartData data, _) => data.x,
                                 yValueMapper: (ChartData data, _) => data.open,
@@ -1568,73 +1636,372 @@ void showDetailedChart(
   );
 }
 
-class MonthlyPredictionChart extends StatelessWidget {
+class MonthlyPredictionChart extends StatefulWidget {
   final List<PredictionChartData> chartData;
 
   const MonthlyPredictionChart({super.key, required this.chartData});
 
   @override
+  State<MonthlyPredictionChart> createState() => _MonthlyPredictionChartState();
+}
+
+class _MonthlyPredictionChartState extends State<MonthlyPredictionChart> {
+  late List<PredictionChartData> displayData;
+  double climateRiskValue = 0.5; // Default slider position (0-1 scale)
+  double maxClimateImpact = 0.6; // Maximum percentage impact (30%)
+
+  @override
+  void initState() {
+    super.initState();
+    displayData = widget.chartData.map((data) => data).toList();
+    _applyClimateAdjustment();
+  }
+
+  // Climate adjustment function
+  double _adjustForClimate(double baseValue, double climateFactor) {
+    // Simple linear adjustment - modify this with your actual climate model
+    // climateFactor represents how sensitive this stock is to climate (0-1)
+    // climateRiskValue is the user-selected risk level (0-1)
+    return baseValue *
+        (1 - (climateFactor * climateRiskValue * maxClimateImpact));
+  }
+
+  void _applyClimateAdjustment() {
+    setState(() {
+      displayData = widget.chartData.map((data) {
+        return PredictionChartData(
+          date: data.date,
+          actualPrice: data.actualPrice,
+          normalPrediction: data.normalPrediction,
+          climatePrediction: _adjustForClimate(
+            data.climatePrediction ?? data.normalPrediction,
+            _getClimateFactorForStock(), // Implement this based on your data
+          ),
+        );
+      }).toList();
+    });
+  }
+
+  // Implement this based on your actual climate sensitivity data
+  double _getClimateFactorForStock() {
+    // This should return a value between 0-1 representing how climate-sensitive the stock is
+    // Example:
+    // - Energy stocks might be 0.8
+    // - Tech stocks might be 0.3
+    // - Agriculture might be 0.9
+    return 0.7; // Default value
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SfCartesianChart(
-      zoomPanBehavior: ZoomPanBehavior(
-        enablePinching: true,
-        enableDoubleTapZooming: true,
-        enablePanning: true,
-        enableSelectionZooming: true,
-      ),
-      primaryXAxis: DateTimeAxis(
-        title: AxisTitle(text: 'Weeks'),
-        intervalType: DateTimeIntervalType.days,
-        interval: 7,
-        dateFormat: DateFormat('MMM dd'),
-      ),
-      primaryYAxis: NumericAxis(
-        title: AxisTitle(text: 'Price (ZiG)'),
-        numberFormat: NumberFormat.currency(
-          symbol: 'ZiG ',
-          decimalDigits: 2,
+    return Column(
+      children: [
+        // Climate Risk Slider
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.thermostat, color: primaryColor),
+                  SizedBox(width: 8),
+                  Text(
+                    'Climate Risk Adjustment',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Slider(
+                      value: climateRiskValue,
+                      min: 0,
+                      max: 1,
+                      divisions: 10,
+                      label: '${(climateRiskValue * 100).toStringAsFixed(0)}%',
+                      onChanged: (value) {
+                        setState(() {
+                          climateRiskValue = value;
+                          _applyClimateAdjustment();
+                        });
+                      },
+                      activeColor: primaryColor,
+                      inactiveColor: Colors.grey.withOpacity(0.3),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Impact: ${(climateRiskValue * maxClimateImpact * 100).toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                'Adjusting for potential climate impacts on stock performance',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey,
+                    ),
+              ),
+            ],
+          ),
         ),
-      ),
-      series: <CartesianSeries>[
-        // Actual Prices
-        ColumnSeries<PredictionChartData, DateTime>(
-          name: 'Actual Price',
-          dataSource: chartData,
-          xValueMapper: (data, _) => data.date,
-          yValueMapper: (data, _) => data.actualPrice,
-          color: Colors.green,
-          width: 0.2,
-          spacing: 0.2,
+
+        // The Chart
+        Expanded(
+          child: SfCartesianChart(
+            zoomPanBehavior: ZoomPanBehavior(
+              enablePinching: true,
+              enableDoubleTapZooming: true,
+              enablePanning: true,
+              enableSelectionZooming: true,
+            ),
+            primaryXAxis: DateTimeAxis(
+              title: AxisTitle(text: 'Weeks'),
+              intervalType: DateTimeIntervalType.days,
+              interval: 7,
+              dateFormat: DateFormat('MMM dd'),
+            ),
+            primaryYAxis: NumericAxis(
+              title: AxisTitle(text: 'Price (ZiG)'),
+              numberFormat: NumberFormat.currency(
+                symbol: 'ZiG ',
+                decimalDigits: 2,
+              ),
+            ),
+            series: <CartesianSeries>[
+              // Actual Prices (Column)
+              ColumnSeries<PredictionChartData, DateTime>(
+                name: 'Actual Price',
+                dataSource: displayData,
+                xValueMapper: (data, _) => data.date,
+                yValueMapper: (data, _) => data.actualPrice,
+                color: Colors.blue.withOpacity(0.6),
+                width: 0.2, // Adjust width between 0-1
+                spacing: 0.1, // Space between columns
+              ),
+
+              // Normal Predictions (Column)
+              ColumnSeries<PredictionChartData, DateTime>(
+                name: 'Normal Prediction',
+                dataSource: displayData,
+                xValueMapper: (data, _) => data.date,
+                yValueMapper: (data, _) => data.normalPrediction,
+                color: Colors.orangeAccent.withOpacity(0.6),
+                width: 0.2,
+                spacing: 0.1,
+              ),
+
+              // Climate-Adjusted Predictions (Column)
+              ColumnSeries<PredictionChartData, DateTime>(
+                name: 'Climate-Adjusted',
+                dataSource: displayData,
+                xValueMapper: (data, _) => data.date,
+                yValueMapper: (data, _) => data.climatePrediction,
+                color: primaryColor.withOpacity(0.6),
+                width: 0.2,
+                spacing: 0.1,
+              ),
+
+              // Trend Lines (displayed on top of columns)
+              // Actual Price Trend (Line)
+              LineSeries<PredictionChartData, DateTime>(
+                name: 'Actual Trend',
+                dataSource: displayData,
+                xValueMapper: (data, _) => data.date,
+                yValueMapper: (data, _) => data.actualPrice,
+                color: Colors.blue,
+                width: 2,
+                markerSettings: MarkerSettings(
+                  isVisible: true,
+                  shape: DataMarkerType.circle,
+                  color: Colors.green,
+                  borderWidth: 2,
+                  borderColor: Colors.white,
+                ),
+              ),
+
+              // Normal Prediction Trend (Dashed Line)
+              LineSeries<PredictionChartData, DateTime>(
+                name: 'Normal Trend',
+                dataSource: displayData,
+                xValueMapper: (data, _) => data.date,
+                yValueMapper: (data, _) => data.normalPrediction,
+                color: Colors.orange,
+                width: 2,
+                dashArray: [5, 5],
+                markerSettings: MarkerSettings(
+                  isVisible: true,
+                  shape: DataMarkerType.diamond,
+                  color: Colors.orange,
+                  borderWidth: 2,
+                  borderColor: Colors.white,
+                ),
+              ),
+
+              // Climate-Adjusted Trend (Line)
+              LineSeries<PredictionChartData, DateTime>(
+                name: 'Climate Trend',
+                dataSource: displayData,
+                xValueMapper: (data, _) => data.date,
+                yValueMapper: (data, _) => data.climatePrediction,
+                color: primaryColor,
+                width: 3,
+                markerSettings: MarkerSettings(
+                  isVisible: true,
+                  shape: DataMarkerType.triangle,
+                  color: primaryColor,
+                  borderWidth: 2,
+                  borderColor: Colors.white,
+                ),
+              ),
+
+              // Climate Impact Range (Area)
+              RangeAreaSeries<PredictionChartData, DateTime>(
+                name: 'Impact Range',
+                dataSource: displayData,
+                xValueMapper: (data, _) => data.date,
+                highValueMapper: (data, _) => data.normalPrediction,
+                lowValueMapper: (data, _) => data.climatePrediction,
+                color: Colors.grey.withOpacity(0.2),
+                borderWidth: 0,
+              ),
+            ],
+            tooltipBehavior: TooltipBehavior(
+              enable: true,
+              builder: (dynamic data, dynamic point, dynamic series,
+                  int pointIndex, int seriesIndex) {
+                final chartData = data as PredictionChartData;
+                return Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.3),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        DateFormat('MMM dd, yyyy').format(chartData.date),
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 4),
+                      _buildTooltipRow(
+                          'Actual:', chartData.actualPrice, Colors.green),
+                      _buildTooltipRow(
+                          'Normal:', chartData.normalPrediction, Colors.blue),
+                      _buildTooltipRow(
+                        'Adjusted:',
+                        chartData.climatePrediction,
+                        Colors.orange,
+                        suffix:
+                            ' (${(climateRiskValue * 100).toStringAsFixed(0)}% climate risk)',
+                      ),
+                      _buildTooltipRow(
+                        'Impact:',
+                        (chartData.normalPrediction -
+                            chartData.climatePrediction!),
+                        Colors.red,
+                        prefix: '-',
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            legend: Legend(
+              isVisible: true,
+              position: LegendPosition.top,
+              overflowMode: LegendItemOverflowMode.wrap,
+              toggleSeriesVisibility: true,
+            ),
+          ),
         ),
-        // Normal Predictions
-        ColumnSeries<PredictionChartData, DateTime>(
-          name: 'Normal Prediction',
-          dataSource: chartData,
-          xValueMapper: (data, _) => data.date,
-          yValueMapper: (data, _) => data.normalPrediction,
-          color: Colors.blue,
-          width: 0.2,
-          spacing: 0.2,
-        ),
-        // Climate Predictions
-        ColumnSeries<PredictionChartData, DateTime>(
-          name: 'Climate Prediction',
-          dataSource: chartData,
-          xValueMapper: (data, _) => data.date,
-          yValueMapper: (data, _) => data.climatePrediction,
-          color: Colors.orange,
-          width: 0.2,
-          spacing: 0.2,
+
+// Helper widget for tooltip rows
+        // Climate Impact Key
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildImpactIndicator('Low Risk', Colors.green),
+              SizedBox(width: 16),
+              _buildImpactIndicator('Medium Risk', Colors.orange),
+              SizedBox(width: 16),
+              _buildImpactIndicator('High Risk', Colors.red),
+            ],
+          ),
         ),
       ],
-      tooltipBehavior: TooltipBehavior(
-        enable: true,
-        format: 'point.x\npoint.y : point.series.name',
-      ),
-      legend: Legend(
-        isVisible: true,
-        position: LegendPosition.top,
-      ),
     );
   }
+
+  Widget _buildImpactIndicator(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(width: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[700],
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+Widget _buildTooltipRow(String label, double? value, Color color,
+    {String? prefix, String? suffix}) {
+  if (value == null) return SizedBox();
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 2),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: Colors.grey[700]),
+        ),
+        SizedBox(width: 4),
+        Text(
+          '${prefix ?? ''}${value.toStringAsFixed(2)}${suffix ?? ''}',
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  );
 }

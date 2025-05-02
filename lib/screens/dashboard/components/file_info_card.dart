@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, unnecessary_null_comparison
 
 import 'dart:math';
 
@@ -68,14 +68,13 @@ class _StockInfoCardState extends State<StockInfoCard> {
 
         errorMessage = null;
       });
-    } catch (e) {
+    } on Exception catch (e) {
       if (_historyRetryCount < _maxRetries) {
         _historyRetryCount++;
         await Future.delayed(Duration(seconds: 1));
         await fetchHistoricalPredictions(symbol);
       } else {
-        _handleError(
-            'Failed to load historical data for $symbol', e as Exception);
+        _handleError('Failed to load historical data for $symbol', e);
       }
     } finally {
       if (mounted) {
@@ -252,12 +251,21 @@ void handleMenuSelection(
   }
 }
 
+
 void showCompanyInfoDialog(
   BuildContext context,
   String companyInfo,
-  List<PredictionEntry> historicalData,
+  List<PredictionEntry> historicalData, // Now accepts List<PredictionEntry>
 ) {
   final company = getCompany(companyInfo);
+  
+  // Sort historical data by date (earliest first)
+  historicalData.sort((a, b) => a.date.compareTo(b.date));
+  
+  // Pagination state - 5 entries per page to match real-time
+  final pageSize = 12;
+  int currentPage = 0;
+  final totalPages = (historicalData.length / pageSize).ceil();
 
   showDialog(
     context: context,
@@ -280,281 +288,338 @@ void showCompanyInfoDialog(
         maxDialogHeight,
       );
 
-      return AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        contentPadding: EdgeInsets.zero,
-        content: Container(
-          height: dialogHeight.toDouble(),
-          width: dialogWidth.toDouble(),
-          child: Padding(
-            padding: EdgeInsets.all(Responsive.isMobile(context) ? 16.0 : 24.0),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Company header with logo and name
-                  Row(
+      return StatefulBuilder(
+        builder: (context, setState) {
+          // Get paginated data
+          final startIndex = currentPage * pageSize;
+          final endIndex = min(startIndex + pageSize, historicalData.length);
+          final paginatedData = historicalData.sublist(startIndex, endIndex);
+
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            contentPadding: EdgeInsets.zero,
+            content: Container(
+              height: dialogHeight.toDouble(),
+              width: dialogWidth.toDouble(),
+              child: Padding(
+                padding: EdgeInsets.all(Responsive.isMobile(context) ? 16.0 : 24.0),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFFEFEFE),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: SvgPicture.asset(
-                          "assets/icons/sprout.svg",
-                          height: 40,
-                          colorFilter:
-                              ColorFilter.mode(primaryColor, BlendMode.srcIn),
-                        ),
-                      ),
-                      SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              company?.name ?? companyInfo,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineLarge
-                                  ?.copyWith(
-                                    fontSize:
-                                        Responsive.isMobile(context) ? 20 : 24,
-                                  ),
+                      // Company header with logo and name
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFFEFEFE),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              company?.symbol != null
-                                  ? '${company!.symbol}.${company.exchange == 'VFEX' ? 'VFEX' : 'ZW'}'
-                                  : generateTicker(companyInfo),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall!
-                                  .copyWith(
-                                    color: primaryColor,
-                                  ),
+                            child: SvgPicture.asset(
+                              "assets/icons/sprout.svg",
+                              height: 40,
+                              colorFilter: ColorFilter.mode(primaryColor, BlendMode.srcIn),
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  company?.name ?? companyInfo,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineLarge
+                                      ?.copyWith(
+                                        fontSize: Responsive.isMobile(context) ? 20 : 24,
+                                      ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  company?.symbol != null
+                                      ? '${company!.symbol}.${company.exchange == 'VFEX' ? 'VFEX' : 'ZW'}'
+                                      : generateTicker(companyInfo),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall!
+                                      .copyWith(
+                                        color: primaryColor,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+
+                      // Basic info chips
+                      if (company != null)
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            Chip(
+                              label: Text(company.sector),
+                              backgroundColor: Colors.grey[200],
+                            ),
+                            Chip(
+                              label: Text('Est. ${company.founded}'),
+                              backgroundColor: Colors.grey[200],
+                            ),
+                            Chip(
+                              label: Text(company.dividend == 'Yes'
+                                  ? 'Dividend Paying'
+                                  : 'No Dividend'),
+                              backgroundColor: company.dividend == 'Yes'
+                                  ? Colors.green[100]
+                                  : Colors.grey[200],
                             ),
                           ],
                         ),
+                      SizedBox(height: 16),
+
+                      // Company description
+                      Text(
+                        "About ${company?.name.split(' ').first ?? companyInfo.split(' ').first}",
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
+                      SizedBox(height: 8),
+                      Text(
+                        company?.description ??
+                            "${companyInfo} is a leading Zimbabwean company with operations in multiple sectors. "
+                                "The company has established itself as a key player in its industry.",
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      SizedBox(height: 16),
+
+                      // Contact info if available
+                      if (company?.website != null || company?.headquarters != null) ...[
+                        Text(
+                          "Company Details",
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        SizedBox(height: 8),
+                        if (company?.headquarters != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              children: [
+                                Icon(Icons.location_on, size: 16, color: Colors.grey),
+                                SizedBox(width: 8),
+                                Text(
+                                  company!.headquarters,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (company?.website != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: InkWell(
+                              onTap: () => launchUrl(Uri.parse(company.website)),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.link, size: 16, color: Colors.grey),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    company!.website,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: Colors.blue,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        SizedBox(height: 16),
+                      ],
+
+                      // Historical data table with pagination
+                      SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Historical Predictions (${historicalData.length} total)",
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          if (historicalData.length > pageSize)
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.chevron_left),
+                                  onPressed: currentPage > 0
+                                      ? () => setState(() => currentPage--)
+                                      : null,
+                                ),
+                                Text(
+                                  '${currentPage + 1} of $totalPages',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.chevron_right),
+                                  onPressed: currentPage < totalPages - 1
+                                      ? () => setState(() => currentPage++)
+                                      : null,
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      if (historicalData.isEmpty)
+                        Text(
+                          "No historical data available",
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        )
+                      else
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            columnSpacing: Responsive.isMobile(context) ? 24 : 48,
+                            columns: [
+                              DataColumn(label: Text("Date")),
+                              DataColumn(label: Text("Predicted")),
+                              DataColumn(label: Text("Actual")),
+                              DataColumn(label: Text("Variance")),
+                              DataColumn(label: Text("Direction")),
+                            ],
+                            rows: paginatedData.map((entry) {
+                              final isOver = entry.direction == 'over';
+                              final varianceColor = isOver ? Colors.red : Colors.green;
+                              final directionText = isOver ? "OVER" : "UNDER";
+
+                              return DataRow(
+                                cells: [
+                                  DataCell(Text(entry.date)),
+                                  DataCell(Text(
+                                    "\$${entry.predictedClose.toStringAsFixed(2)}",
+                                    style: TextStyle(
+                                      color: Colors.grey[700],
+                                    ),
+                                  )),
+                                  DataCell(Text(
+                                    "\$${entry.actualClose.toStringAsFixed(2)}",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )),
+                                  DataCell(Text(
+                                    "${entry.variancePercent.toStringAsFixed(2)}%",
+                                    style: TextStyle(
+                                      color: varianceColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )),
+                                  DataCell(
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isOver
+                                            ? Colors.red.withOpacity(0.2)
+                                            : Colors.green.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        directionText,
+                                        style: TextStyle(
+                                          color: isOver ? Colors.red : Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        ),
                     ],
                   ),
-                  SizedBox(height: 16),
-
-                  // Basic info chips
-                  if (company != null)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        Chip(
-                          label: Text(company.sector),
-                          backgroundColor: Colors.grey[200],
-                        ),
-                        Chip(
-                          label: Text('Est. ${company.founded}'),
-                          backgroundColor: Colors.grey[200],
-                        ),
-                        Chip(
-                          label: Text(company.dividend == 'Yes'
-                              ? 'Dividend Paying'
-                              : 'No Dividend'),
-                          backgroundColor: company.dividend == 'Yes'
-                              ? Colors.green[100]
-                              : Colors.grey[200],
-                        ),
-                      ],
-                    ),
-                  SizedBox(height: 16),
-
-                  // Company description
-                  Text(
-                    "About ${company?.name.split(' ').first ?? companyInfo.split(' ').first}",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    company?.description ??
-                        "${companyInfo} is a leading Zimbabwean company with operations in multiple sectors. "
-                            "The company has established itself as a key player in its industry.",
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  SizedBox(height: 16),
-
-                  // Contact info if available
-                  if (company?.website != null ||
-                      company?.headquarters != null) ...[
-                    Text(
-                      "Company Details",
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    SizedBox(height: 8),
-                    if (company?.headquarters != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(
-                          children: [
-                            Icon(Icons.location_on,
-                                size: 16, color: Colors.grey),
-                            SizedBox(width: 8),
-                            Text(
-                              company!.headquarters,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (company?.website != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: InkWell(
-                          onTap: () => launchUrl(Uri.parse(company.website)),
-                          child: Row(
-                            children: [
-                              Icon(Icons.link, size: 16, color: Colors.grey),
-                              SizedBox(width: 8),
-                              Text(
-                                company!.website,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: Colors.blue,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    SizedBox(height: 16),
-                  ],
-
-                  // Historical data table
-                  SizedBox(height: 24),
-                  Text(
-                    "Historical Predictions",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  SizedBox(height: 8),
-                  if (historicalData.isEmpty)
-                    Text(
-                      "No historical data available",
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    )
-                  else
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columnSpacing: Responsive.isMobile(context) ? 24 : 48,
-                        columns: [
-                          DataColumn(label: Text("Date")),
-                          DataColumn(label: Text("Predicted")),
-                          DataColumn(label: Text("Actual")),
-                          DataColumn(label: Text("Variance")),
-                          DataColumn(label: Text("Direction")),
-                        ],
-                        rows: historicalData.map((entry) {
-                          final isOver = entry.direction == 'over';
-                          final varianceColor =
-                              isOver ? Colors.red : Colors.green;
-                          final directionText = isOver ? "OVER" : "UNDER";
-
-                          return DataRow(
-                            cells: [
-                              DataCell(Text(entry.date)),
-                              DataCell(Text(
-                                "\$${entry.predictedClose.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                ),
-                              )),
-                              DataCell(Text(
-                                "\$${entry.actualClose.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )),
-                              DataCell(Text(
-                                "${entry.variancePercent.toStringAsFixed(2)}%",
-                                style: TextStyle(
-                                  color: varianceColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )),
-                              DataCell(
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isOver
-                                        ? Colors.red.withOpacity(0.2)
-                                        : Colors.green.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    directionText,
-                                    style: TextStyle(
-                                      color: isOver ? Colors.red : Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-        actions: [
-          ElevatedButton.icon(
-            style: TextButton.styleFrom(
-              backgroundColor: primaryColor,
-              padding: EdgeInsets.symmetric(
-                horizontal: Responsive.isMobile(context)
-                    ? defaultPadding
-                    : defaultPadding * 1.5,
-                vertical: Responsive.isMobile(context)
-                    ? defaultPadding / 2
-                    : defaultPadding,
+            actions: [
+              ElevatedButton.icon(
+                style: TextButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: Responsive.isMobile(context)
+                        ? defaultPadding
+                        : defaultPadding * 1.5,
+                    vertical: Responsive.isMobile(context)
+                        ? defaultPadding / 2
+                        : defaultPadding,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6.0),
+                  ),
+                ),
+                onPressed: () => Navigator.pop(context),
+                label: Text(
+                  "Close",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: Responsive.isMobile(context) ? 14 : 16,
+                  ),
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6.0),
-              ),
-            ),
-            onPressed: () => Navigator.pop(context),
-            label: Text(
-              "Close",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: Responsive.isMobile(context) ? 14 : 16,
-              ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       );
     },
   );
 }
 
+
+
+
+
+
+
+
+// Data model class
+class HistoricalData {
+  final String date;
+  final String dayOfWeek;
+  final double predictedPrice;
+  final double actualPrice;
+  final String? direction;
+  final double? variancePercent;
+  final String source;
+
+  HistoricalData({
+    required this.date,
+    required this.dayOfWeek,
+    required this.predictedPrice,
+    required this.actualPrice,
+    this.direction,
+    this.variancePercent,
+    required this.source,
+  });
+}
 void showRemoveConfirmation(BuildContext context) {
   showDialog(
     context: context,

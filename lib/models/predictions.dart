@@ -331,23 +331,23 @@ class HistoricalPredictionModel {
     required this.success,
   });
 
-factory HistoricalPredictionModel.fromJson(Map<String, dynamic> json) {
-  return HistoricalPredictionModel(
-    symbol: json['data']['symbol'],
-    historicalPredictions: (json['data']['historical_data'] as List)
-        .map((item) => PredictionEntry.fromJson(item))
-        .toList(),
-    note: json['data']['note'],
-    success: json['success'], // This comes from the root, not data
-  );
-}
+  factory HistoricalPredictionModel.fromJson(Map<String, dynamic> json) {
+    return HistoricalPredictionModel(
+      symbol: json['data']['symbol'],
+      historicalPredictions: (json['data']['historical_data'] as List)
+          .map((item) => PredictionEntry.fromJson(item))
+          .toList(),
+      note: json['data']['note'],
+      success: json['success'], // This comes from the root, not data
+    );
+  }
 }
 
 class PredictionEntry {
-  final double actualClose; // Changed from actualPrice
+  final double actualClose;
   final String date;
   final String direction;
-  final double predictedClose; // Changed from predictedPrice
+  final double predictedClose;
   final double variancePercent;
 
   PredictionEntry({
@@ -361,8 +361,8 @@ class PredictionEntry {
   factory PredictionEntry.fromJson(Map<String, dynamic> json) {
     return PredictionEntry(
       actualClose: json['actual_price']?.toDouble() ?? 0.0,
-      date: json['date'],
-      direction: json['direction'],
+      date: json['date'] ?? '', // Fallback for date if null
+      direction: json['direction'] ?? 'N/A', // Fallback for direction if null
       predictedClose: json['predicted_price']?.toDouble() ?? 0.0,
       variancePercent: json['variance_percent']?.toDouble() ?? 0.0,
     );
